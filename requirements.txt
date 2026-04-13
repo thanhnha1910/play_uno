@@ -17,3 +17,4 @@ typing-inspection==0.4.2
 typing_extensions==4.15.0
 uvicorn==0.39.0
 wsproto==1.2.0
+aiofiles==24.1.0

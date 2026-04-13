@@ -147,21 +147,35 @@ async def timer_loop():
 async def startup_event():
     asyncio.create_task(timer_loop())
 
+# Logic phục vụ Frontend (React)
+# Lưu ý: Cấu hình này phải nằm SAU khi đã định nghĩa các API/SocketIO routes khác
 frontend_dist = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "frontend", "dist"))
-print(f"[INFO] Looking for frontend dist at: {frontend_dist}, exists: {os.path.exists(frontend_dist)}")
-if os.path.exists(frontend_dist):
-    app.mount("/assets", StaticFiles(directory=os.path.join(frontend_dist, "assets")), name="assets")
+print(f"[DEBUG] Frontend dist path: {frontend_dist}")
+print(f"[DEBUG] Path exists: {os.path.exists(frontend_dist)}")
 
+if os.path.exists(frontend_dist):
+    # 1. Mount folder assets cho CSS/JS
+    assets_path = os.path.join(frontend_dist, "assets")
+    if os.path.exists(assets_path):
+        app.mount("/assets", StaticFiles(directory=assets_path), name="assets")
+    
+    # 2. Phục vụ index.html cho route gốc /
+    @app.get("/")
+    async def serve_index():
+        return FileResponse(os.path.join(frontend_dist, "index.html"))
+
+    # 3. Phục vụ các file khác (manifest, favicon, etc) hoặc trả về index.html (SPA logic)
     @app.get("/{full_path:path}")
-    async def serve_react_app(full_path: str):
+    async def serve_spa(full_path: str):
         file_path = os.path.join(frontend_dist, full_path)
         if os.path.isfile(file_path):
             return FileResponse(file_path)
+        # Nếu không thấy file, trả về index.html để React Router xử lý
         return FileResponse(os.path.join(frontend_dist, "index.html"))
 else:
     @app.get("/")
-    def index():
-        return {"message": "Thư mục frontend/dist không tồn tại. Vui lòng build React app."}
+    async def fallback():
+        return {"error": "Frontend build not found", "path_tried": frontend_dist}
 
 # Dùng socket_app là entrypoint thật sự cho Uvicorn. Nó wrap app FastAPI.
 socket_app = socketio.ASGIApp(sio, app)
