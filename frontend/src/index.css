@@ -1,0 +1,535 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800;900&display=swap');
+
+:root {
+  --pink-bg: #ffe4e6;
+  --pink-primary: #fda4af;
+  --pink-dark: #e11d48;
+  --glass-bg: rgba(255, 255, 255, 0.4);
+  --glass-border: rgba(255, 255, 255, 0.6);
+  --text-main: #4c0519;
+  --card-width: 86px;
+  --card-height: 126px;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  font-family: 'Outfit', sans-serif;
+  background: linear-gradient(135deg, #fff1f2, #ffe4e6);
+  color: var(--text-main);
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+#root {
+  width: 100vw;
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+}
+
+h1, h2, h3 {
+  margin: 0;
+  font-weight: 800;
+}
+
+.glass-panel {
+  background: var(--glass-bg);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid var(--glass-border);
+  border-radius: 24px;
+  box-shadow: 0 8px 32px 0 rgba(225, 29, 72, 0.1);
+}
+
+.btn {
+  background: var(--pink-dark);
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 999px;
+  font-family: 'Outfit', sans-serif;
+  font-weight: 600;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 14px 0 rgba(225, 29, 72, 0.39);
+}
+
+.btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(225, 29, 72, 0.5);
+}
+
+.btn:active:not(:disabled) {
+  transform: translateY(0) scale(0.97);
+}
+
+.btn:disabled {
+  background: #fecdd3;
+  color: #fda4af;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+.app-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  padding: 20px;
+  box-sizing: border-box;
+}
+
+/* Waiting Room */
+.lobby {
+  padding: 40px;
+  text-align: center;
+  max-width: 400px;
+  animation: fadeIn 0.5s ease-out;
+}
+
+.lobby h1 {
+  font-size: 4rem;
+  color: var(--pink-dark);
+  margin-bottom: 20px;
+  text-shadow: 2px 2px 4px rgba(255, 255, 255, 0.6);
+}
+
+.spinner {
+  margin: 20px auto;
+  width: 40px;
+  height: 40px;
+  border: 4px solid var(--pink-primary);
+  border-top-color: var(--pink-dark);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+/* ====================================================
+   GAME BOARD LAYOUT
+   ==================================================== */
+.game-board {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: 900px;
+  margin: 0 auto;
+  flex: 1;
+  padding: 10px;
+  box-sizing: border-box;
+  gap: 5px;
+}
+
+.opponent-area {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.status-badge {
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  background: white;
+  color: var(--pink-dark);
+  white-space: nowrap;
+}
+
+.center-area {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 30px;
+  position: relative;
+  padding: 10px 0;
+}
+
+.messages {
+  position: absolute;
+  left: 10px;
+  top: 0;
+  max-width: 220px;
+  font-size: 0.78rem;
+  opacity: 0.8;
+  padding: 10px;
+  max-height: 130px;
+  overflow-y: auto;
+}
+
+.message-item {
+  margin-bottom: 3px;
+}
+
+.pile-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.85rem;
+}
+
+/* Player Hand */
+.player-area {
+  padding: 10px 10px 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+/* ====================================================
+   CARDS HAND - CLEAN, NO OVERLAP
+   ==================================================== */
+.cards-hand {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 10px 15px;
+  box-sizing: border-box;
+  width: 100%;
+}
+
+/* ====================================================
+   REALISTIC UNO CARD STYLING
+   ==================================================== */
+.uno-card-wrapper {
+  width: var(--card-width);
+  min-width: var(--card-width);
+  height: var(--card-height);
+  border-radius: 8px;
+  background: white;
+  padding: 5px;
+  box-shadow: 0 3px 8px rgba(0,0,0,0.15), inset 0 0 0 1px rgba(0,0,0,0.05);
+  cursor: pointer;
+  transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.2s;
+  user-select: none;
+  font-family: Arial, sans-serif;
+  position: relative;
+  flex-shrink: 0;
+}
+
+/* Hover bài mình */
+.cards-hand:not(.opponent-hand) .uno-card-wrapper:hover {
+  transform: translateY(-10px) scale(1.06);
+  box-shadow: 0 10px 20px rgba(0,0,0,0.25);
+  z-index: 50 !important;
+}
+
+/* Bài đối thủ: chồng lại, compact */
+.opponent-hand {
+  gap: 0 !important;
+  flex-wrap: nowrap !important;
+}
+.opponent-hand .uno-card-wrapper {
+  margin-left: -35px;
+}
+.opponent-hand .uno-card-wrapper:first-child {
+  margin-left: 0;
+}
+.opponent-hand .uno-card-wrapper:hover {
+  transform: none !important;
+  box-shadow: 0 3px 8px rgba(0,0,0,0.15) !important;
+}
+
+.uno-card-inner {
+  width: 100%;
+  height: 100%;
+  border-radius: 6px;
+  background-color: var(--card-color);
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+/* Colors mapped */
+.uno-card-wrapper.Đỏ { --card-color: #ef4444; }
+.uno-card-wrapper.Vàng { --card-color: #facc15; }
+.uno-card-wrapper.Xanh-lá { --card-color: #22c55e; }
+.uno-card-wrapper.Xanh-dương { --card-color: #3b82f6; }
+.uno-card-wrapper.Đen { --card-color: #1f2937; }
+
+.uno-card-oval {
+  position: absolute;
+  width: 125%;
+  height: 65%;
+  background-color: white;
+  border-radius: 50%;
+  transform: rotate(-30deg);
+  box-shadow: inset 0 0 0 4px var(--card-color), 0 2px 4px rgba(0,0,0,0.2);
+  z-index: 1;
+}
+
+/* Wild Card Special Gradient Oval */
+.uno-card-wrapper.Đen .uno-card-oval {
+  background: conic-gradient(from 45deg, #ef4444 25%, #3b82f6 0 50%, #facc15 0 75%, #22c55e 0);
+  box-shadow: inset 0 0 0 4px #1f2937, 0 2px 4px rgba(0,0,0,0.5);
+}
+
+.uno-card-center-value {
+  position: relative;
+  z-index: 2;
+  font-size: 2.8rem;
+  font-weight: 900;
+  color: var(--card-color);
+  text-shadow: 2px 2px 0px white, -2px -2px 0px white, 2px -2px 0px white, -2px 2px 0px white, 3px 3px 6px rgba(0,0,0,0.4);
+  line-height: 1;
+  letter-spacing: -2px;
+}
+
+.uno-card-wrapper.Vàng .uno-card-center-value {
+  text-shadow: 2px 2px 0px white, -2px -2px 0px white, 2px -2px 0px white, -2px 2px 0px white, 3px 3px 6px rgba(0,0,0,0.2);
+}
+
+.uno-card-wrapper.Đen .uno-card-center-value {
+  color: white;
+  text-shadow: 2px 2px 0px black, -2px -2px 0px black, 2px -2px 0px black, -2px 2px 0px black, 3px 3px 6px rgba(0,0,0,0.5);
+  font-size: 1.8rem;
+  transform: rotate(-15deg);
+}
+
+.uno-card-corner {
+  position: absolute;
+  font-size: 1rem;
+  font-weight: 800;
+  color: white;
+  text-shadow: 1px 1px 0px rgba(0,0,0,0.5);
+  z-index: 2;
+}
+
+.uno-card-top-left {
+  top: 3px;
+  left: 5px;
+}
+
+.uno-card-bottom-right {
+  bottom: 3px;
+  right: 5px;
+  transform: rotate(180deg);
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes pop-in {
+  0% { opacity: 0; transform: scale(0.1) rotate(-30deg); }
+  50% { transform: scale(1.2) rotate(5deg); }
+  100% { opacity: 1; transform: scale(1) rotate(-10deg); }
+}
+
+@keyframes pulse {
+  0% { box-shadow: 0 0 0 0 rgba(225, 29, 72, 0.5); }
+  100% { box-shadow: 0 0 0 12px rgba(225, 29, 72, 0); }
+}
+
+/* Action bar */
+.action-bar {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.color-picker {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  backdrop-filter: blur(5px);
+}
+
+.color-picker-modal {
+  padding: 30px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  align-items: center;
+}
+
+.color-options {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.color-btn {
+  width: 60px; height: 60px;
+  border-radius: 50%;
+  border: 4px solid white;
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+}
+.color-btn:hover { 
+  transform: scale(1.15); 
+  box-shadow: 0 6px 15px rgba(0,0,0,0.3);
+}
+.bg-Đỏ { background: #ef4444; }
+.bg-Vàng { background: #facc15; }
+.bg-Xanh-lá { background: #22c55e; }
+.bg-Xanh-dương { background: #3b82f6; }
+
+/* Deck placeholder */
+.deck-placeholder {
+  width: var(--card-width);
+  height: var(--card-height);
+  border-radius: 8px;
+  border: 2px dashed rgba(255,255,255,0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-weight: bold;
+}
+
+/* ====================================================
+   MOBILE RESPONSIVE
+   ==================================================== */
+@media (max-width: 768px) {
+  :root {
+    --card-width: 62px;
+    --card-height: 90px;
+  }
+
+  .game-board {
+    padding: 5px;
+    gap: 2px;
+  }
+
+  .center-area {
+    flex-direction: row;
+    gap: 15px;
+    padding: 5px 0;
+  }
+
+  /* Nhật ký: Thu gọn lại trên mobile */
+  .messages {
+    position: relative;
+    left: 0;
+    top: 0;
+    max-width: 100%;
+    max-height: 80px;
+    font-size: 0.7rem;
+    padding: 8px;
+    border-radius: 12px;
+    margin-bottom: 5px;
+  }
+
+  .pile-container {
+    font-size: 0.75rem;
+    gap: 4px;
+  }
+
+  .player-area {
+    padding: 5px 5px 15px;
+    gap: 8px;
+  }
+
+  .cards-hand {
+    padding: 8px 5px;
+    gap: 6px;
+  }
+
+  .cards-hand:not(.opponent-hand) .uno-card-wrapper:hover {
+    transform: translateY(-8px) scale(1.04);
+  }
+
+  .opponent-hand {
+    transform: scale(0.65) !important;
+    margin-top: -10px !important;
+  }
+
+  .opponent-hand .uno-card-wrapper {
+    margin-left: -25px;
+  }
+
+  .uno-card-center-value {
+    font-size: 2rem;
+  }
+
+  .uno-card-wrapper.Đen .uno-card-center-value {
+    font-size: 1.4rem;
+  }
+
+  .uno-card-corner {
+    font-size: 0.7rem;
+  }
+
+  .status-badge {
+    padding: 5px 10px;
+    font-size: 0.75rem;
+  }
+
+  .action-bar {
+    gap: 6px;
+  }
+
+  .action-bar .btn {
+    padding: 8px 14px;
+    font-size: 0.85rem !important;
+  }
+
+  .btn {
+    padding: 10px 18px;
+    font-size: 0.9rem;
+  }
+
+  .lobby {
+    padding: 25px;
+  }
+
+  .lobby h1 {
+    font-size: 3rem;
+  }
+
+  .color-btn {
+    width: 50px;
+    height: 50px;
+  }
+}
+
+/* Extra small phones */
+@media (max-width: 400px) {
+  :root {
+    --card-width: 50px;
+    --card-height: 72px;
+  }
+
+  .cards-hand {
+    gap: 4px;
+  }
+
+  .uno-card-center-value {
+    font-size: 1.5rem;
+  }
+
+  .uno-card-corner {
+    font-size: 0.55rem;
+  }
+
+  .opponent-hand {
+    transform: scale(0.55) !important;
+  }
+}
