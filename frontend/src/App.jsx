@@ -1,14 +1,21 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback, useMemo, memo } from 'react';
 import { io } from 'socket.io-client';
 
 const SERVER_URL = import.meta.env.PROD ? "" : "http://localhost:10000";
-const socket = io(SERVER_URL);
+const socket = io(SERVER_URL, {
+  transports: ['websocket'],   // Skip polling, go straight to WS
+  reconnectionDelay: 1000,
+  reconnectionDelayMax: 3000,
+});
 
-// Hàm helper để render thẻ bài chân thực
-const UnoCard = ({ color, value, type, onClick, isDrawDeck, drawStack }) => {
+const AVATARS = ['🐱', '🐶', '🦊', '🐸', '🐼', '🐨', '🦁', '🐯', '🐰', '🐻', '🐷', '🦄'];
+
+// ============================================================
+// MEMOIZED: UnoCard — chỉ re-render khi props thay đổi
+// ============================================================
+const UnoCard = memo(({ color, value, type, onClick, isDrawDeck, drawStack, isHinted, small }) => {
   const colorClass = color.replace(' xanh', '').replace(' lá', '-lá').replace(' dương', '-dương');
   
-  // Mapping Icon
   let displayValue = value;
   let cornerValue = value;
   
@@ -18,109 +25,140 @@ const UnoCard = ({ color, value, type, onClick, isDrawDeck, drawStack }) => {
   if (value === '+4') { displayValue = '+4'; cornerValue = '+4'; }
   if (value === 'Đổi màu') { displayValue = 'WILD'; cornerValue = ''; }
 
-  const centerScale = displayValue.length > 2 ? '0.6' : '1'; 
-
   if (isDrawDeck) {
     return (
-      <div className={`uno-card-wrapper Đen`} onClick={onClick} style={{ cursor: 'pointer' }}>
-        <div className="uno-card-inner" style={{background: '#e11d48'}}>
-          <div className="uno-card-oval" style={{background: '#be123c', boxShadow: 'none'}}></div>
-          <div className="uno-card-center-value" style={{color: '#facc15', textShadow: '2px 2px 0px rgba(0,0,0,0.5)', fontSize: '2rem', transform: 'rotate(-25deg)', textAlign: 'center'}}>
+      <div className={`uno-card-wrapper Đen${small ? ' card-small' : ''}`} onClick={onClick} style={{ cursor: 'pointer' }}>
+        <div className="uno-card-inner draw-deck-inner">
+          <div className="uno-card-oval draw-deck-oval"></div>
+          <div className="draw-deck-label">
             UNO
-            {drawStack > 0 && <div style={{fontSize: '1rem', color: 'white'}}>+{drawStack}</div>}
+            {drawStack > 0 && <div className="draw-stack-num">+{drawStack}</div>}
           </div>
         </div>
       </div>
     );
   }
 
+  const cls = `uno-card-wrapper ${colorClass}${isHinted ? ' card-hinted' : ''}${small ? ' card-small' : ''}`;
+
   return (
-    <div className={`uno-card-wrapper ${colorClass}`} onClick={onClick}>
+    <div className={cls} onClick={onClick}>
       <div className="uno-card-inner">
         <div className="uno-card-corner uno-card-top-left">{cornerValue}</div>
         <div className="uno-card-oval"></div>
-        <div className="uno-card-center-value" style={{ transform: `rotate(0deg) scale(${centerScale})` }}>
+        <div className="uno-card-center-value">
           {displayValue}
         </div>
         <div className="uno-card-corner uno-card-bottom-right">{cornerValue}</div>
-        {/* Helper text cho Wild card Color */}
         {type === 'wild' && color !== 'Đen' && (
-           <div style={{position: 'absolute', bottom: '4px', fontSize: '0.65rem', color: 'white', zIndex: 10, fontWeight: 'bold', textShadow: '1px 1px 2px black'}}>
-             {color}
-           </div>
+           <div className="wild-color-label">{color}</div>
         )}
       </div>
     </div>
   );
-};
+});
 
+// ============================================================
+// MEMOIZED: Opponent back-card
+// ============================================================
+const OpponentCard = memo(({ small }) => (
+  <div className={`uno-card-wrapper Đỏ${small ? ' card-small' : ''}`}>
+    <div className="uno-card-inner draw-deck-inner">
+      <div className="uno-card-oval draw-deck-oval"></div>
+      <div className="draw-deck-label" style={{fontSize: '1.4rem'}}>UNO</div>
+    </div>
+  </div>
+));
+
+// ============================================================
+// MEMOIZED: PlayerBadge
+// ============================================================
+const PlayerBadge = memo(({ info, cardCount, isActive, isSelf, timer, maxTime, canCatch, onCatch }) => {
+  const timerPct = maxTime > 0 ? Math.max(0, Math.min(100, (timer / maxTime) * 100)) : 0;
+  const timerColor = timer <= 5 ? '#e11d48' : (timer <= 10 ? '#f59e0b' : '#10b981');
+
+  return (
+    <div className={`player-badge${isActive ? ' badge-active' : ''}${isSelf ? ' badge-self' : ''}`}>
+      <div className="badge-avatar-wrap">
+        <div className="badge-avatar" style={isActive ? { boxShadow: `0 0 0 3px ${timerColor}` } : undefined}>{info?.avatar || '🐱'}</div>
+      </div>
+      <div className="badge-info">
+        <div className="badge-name">{info?.nickname || 'Player'}</div>
+        <div className="badge-cards">{cardCount} lá</div>
+      </div>
+      {canCatch && (
+        <button className="btn catch-btn" onClick={onCatch}>Bắt UNO!</button>
+      )}
+      {isActive && (
+        <div className="badge-timer-bar">
+          <div className="badge-timer-fill" style={{ width: `${timerPct}%`, backgroundColor: timerColor }} />
+          <span className="badge-timer-text">{timer}s</span>
+        </div>
+      )}
+    </div>
+  );
+});
+
+// ============================================================
+// APP
+// ============================================================
 function App() {
   const [gameState, setGameState] = useState({ status: 'login' });
   const [errorMsg, setErrorMsg] = useState('');
   const [showColorPicker, setShowColorPicker] = useState(false);
   const [pendingCardIndex, setPendingCardIndex] = useState(null);
   const [roomInput, setRoomInput] = useState('');
+  const [nickname, setNickname] = useState('');
+  const [selectedAvatar, setSelectedAvatar] = useState('🐱');
   const [localTime, setLocalTime] = useState(0);
   const [showUnoEffect, setShowUnoEffect] = useState(false);
 
+  // Socket listeners — chỉ mount 1 lần
   useEffect(() => {
-    socket.on('game_state', (data) => {
-      setGameState(data);
-    });
-
-    socket.on('error_msg', (data) => {
+    const onState = (data) => setGameState(data);
+    const onError = (data) => {
       setErrorMsg(data.message);
       setTimeout(() => setErrorMsg(''), 3000);
-    });
-
-    socket.on('uno_shout', () => {
+    };
+    const onUno = () => {
       setShowUnoEffect(true);
-      
-      // Auto-Hide popup sau 2 giây
       setTimeout(() => setShowUnoEffect(false), 2000);
-      
-      // Phát tiếng nói bốc đồng
       try {
         const msg = new SpeechSynthesisUtterance('UNO!');
-        msg.rate = 1.3;
-        msg.pitch = 1.5;
+        msg.rate = 1.3; msg.pitch = 1.5;
         window.speechSynthesis.speak(msg);
       } catch (e) {}
-    });
-
-    return () => {
-      socket.off('game_state');
-      socket.off('error_msg');
-      socket.off('uno_shout');
     };
+
+    socket.on('game_state', onState);
+    socket.on('error_msg', onError);
+    socket.on('uno_shout', onUno);
+    return () => { socket.off('game_state', onState); socket.off('error_msg', onError); socket.off('uno_shout', onUno); };
   }, []);
 
-  // Timer đồng bộ từ server và tự đếm client-side
+  // Sync server timer
   useEffect(() => {
-    if (gameState.time_left !== undefined) {
-      setLocalTime(gameState.time_left);
-    }
+    if (gameState.time_left !== undefined) setLocalTime(gameState.time_left);
   }, [gameState.time_left, gameState.is_my_turn]);
 
+  // Client-side countdown — chỉ update localTime, không re-render cards
   useEffect(() => {
-    let timerId;
-    if (gameState.status === 'playing' && localTime > 0) {
-      timerId = setInterval(() => {
-        setLocalTime(prev => Math.max(0, prev - 1));
-      }, 1000);
-    }
-    return () => clearInterval(timerId);
+    if (gameState.status !== 'playing' || localTime <= 0) return;
+    const id = setInterval(() => setLocalTime(t => Math.max(0, t - 1)), 1000);
+    return () => clearInterval(id);
   }, [gameState.status, localTime]);
 
-  const handleJoinRoom = (e) => {
+  // ---- Stable callbacks (useCallback) ----
+  const handleJoinRoom = useCallback((e) => {
     e.preventDefault();
+    const n = nickname.trim() || 'Player';
     if (roomInput.trim()) {
-      socket.emit('join_room', { room_id: roomInput });
+      socket.emit('join_room', { room_id: roomInput, nickname: n, avatar: selectedAvatar });
       setGameState({ status: 'waiting', room_id: roomInput });
     }
-  };
+  }, [roomInput, nickname, selectedAvatar]);
 
-  const handlePlayCard = (index) => {
+  const handlePlayCard = useCallback((index) => {
     if (!gameState.is_my_turn) return;
     const card = gameState.hand[index];
     if (card.type === 'wild' && card.value !== '+4') {
@@ -129,122 +167,92 @@ function App() {
     } else {
       socket.emit('play_card', { card_index: index });
     }
-  };
+  }, [gameState.is_my_turn, gameState.hand]);
 
-  const handleColorSelected = (color) => {
+  const handleColorSelected = useCallback((color) => {
     socket.emit('play_card', { card_index: pendingCardIndex, chosen_color: color });
     setShowColorPicker(false);
     setPendingCardIndex(null);
-  };
+  }, [pendingCardIndex]);
 
-  const handleDrawCard = () => {
+  const handleDrawCard = useCallback(() => {
     if (!gameState.is_my_turn) return;
     socket.emit('draw_card', {});
-  };
+  }, [gameState.is_my_turn]);
 
-  const handleCallUno = () => {
-    socket.emit('call_uno', {});
-  };
+  const handleCallUno = useCallback(() => socket.emit('call_uno', {}), []);
+  const handleCatchUno = useCallback(() => socket.emit('catch_uno', {}), []);
+  const handlePassTurn = useCallback(() => socket.emit('pass_turn', {}), []);
 
-  const handleCatchUno = () => {
-    socket.emit('catch_uno', {});
-  };
+  // Last message memo
+  const lastMessage = useMemo(() => {
+    const msgs = gameState.messages;
+    return msgs?.length > 0 ? msgs[msgs.length - 1] : null;
+  }, [gameState.messages]);
 
-  // Helper render TimerBar chung
-  const renderTimerBar = (isActive) => {
-    if (!isActive || gameState.status !== 'playing') {
-       return <div style={{height: '6px', width: '100%', marginBottom: '10px'}} />; // Placeholder
-    }
-    return (
-       <div style={{ 
-           width: '100%', height: '6px', background: 'var(--glass-bg)', 
-           borderRadius: '10px', overflow: 'hidden', border: '1px solid var(--glass-border)',
-           boxShadow: '0 0 10px rgba(225, 29, 72, 0.3)',
-           marginBottom: '10px'
-       }}>
-          <div style={{
-            height: '100%',
-            width: `${Math.min(100, Math.max(0, (localTime / 15) * 100))}%`,
-            background: localTime <= 5 ? '#e11d48' : (localTime <= 10 ? '#f59e0b' : '#10b981'),
-            transition: 'background-color 0.5s ease', // Bỏ transition width để thanh bị snap giật dứt khoát 1s/lần
-            borderRadius: '10px'
-          }}></div>
-       </div>
-    );
-  };
-
+  // ============ LOGIN ============
   if (gameState.status === 'login') {
     return (
       <div className="app-container">
         <div className="glass-panel lobby">
           <h1>UNO</h1>
-          <p style={{marginBottom: '20px', fontWeight: 600}}>Cùng người thương chơi UNO!</p>
-          <form onSubmit={handleJoinRoom} style={{display: 'flex', flexDirection: 'column', gap: '15px', alignItems: 'center'}}>
-            <input 
-              type="text" 
-              placeholder="Nhập Mã Phòng..." 
-              value={roomInput}
-              onChange={(e) => setRoomInput(e.target.value)}
-              style={{
-                padding: '12px 20px', borderRadius: '99px', border: '2px solid var(--pink-primary)', 
-                fontSize: '1.1rem', outline: 'none', width: '250px', textAlign: 'center',
-                fontFamily: 'Outfit, sans-serif'
-              }}
-            />
-            <button className="btn" type="submit">Vào Phòng</button>
+          <p className="lobby-sub">Cùng người thương chơi UNO!</p>
+          <div className="avatar-picker">
+            <div className="avatar-selected">{selectedAvatar}</div>
+            <div className="avatar-grid">
+              {AVATARS.map(av => (
+                <div key={av} className={`avatar-option${selectedAvatar === av ? ' avatar-active' : ''}`} onClick={() => setSelectedAvatar(av)}>{av}</div>
+              ))}
+            </div>
+          </div>
+          <form onSubmit={handleJoinRoom} className="lobby-form">
+            <input type="text" placeholder="Biệt danh..." value={nickname} onChange={e => setNickname(e.target.value)} maxLength={12} className="input-field" />
+            <input type="text" placeholder="Mã Phòng..." value={roomInput} onChange={e => setRoomInput(e.target.value)} className="input-field" />
+            <button className="btn btn-primary" type="submit">Vào Phòng</button>
           </form>
         </div>
       </div>
     );
   }
 
+  // ============ WAITING ============
   if (gameState.status === 'waiting') {
     return (
       <div className="app-container">
         <div className="glass-panel lobby">
-          <h1>UNO</h1>
-          <p>Mã phòng: <strong style={{color: 'var(--pink-dark)', fontSize:'1.2rem'}}>{gameState.room_id}</strong></p>
-          <p>Đang chờ đối thủ vào mã này...</p>
+          <div className="avatar-selected" style={{fontSize: '3rem'}}>{selectedAvatar}</div>
+          <h2 style={{color: 'var(--pink-dark)', marginTop: '10px'}}>{nickname || 'Player'}</h2>
+          <p style={{marginTop: '8px'}}>Mã phòng: <strong className="room-code">{gameState.room_id?.toUpperCase()}</strong></p>
+          <p style={{opacity: 0.7, fontSize: '0.9rem'}}>Đang chờ đối thủ...</p>
           <div className="spinner"></div>
-          <button className="btn" style={{marginTop: '20px', background: '#6b7280'}} onClick={() => window.location.reload()}>Quay Lại</button>
+          <button className="btn" style={{marginTop: '15px', background: '#6b7280'}} onClick={() => window.location.reload()}>Quay Lại</button>
         </div>
       </div>
     );
   }
 
+  // ============ FINISHED ============
   if (gameState.status === 'finished') {
+    const didWin = gameState.winner === true;
     return (
       <div className="app-container">
         <div className="glass-panel lobby">
-          <h1>{gameState.winner === true ? "BẠN ĐÃ THẮNG! 🎉" : "ĐỐI THỦ THẮNG! 💔"}</h1>
-          <button className="btn" onClick={() => window.location.reload()}>
-            Chơi Lại
-          </button>
+          <div className="avatar-selected" style={{fontSize: '4rem'}}>{didWin ? '🎉' : '💔'}</div>
+          <h1 style={{marginTop: '10px'}}>{didWin ? "BẠN THẮNG!" : "THUA RỒI!"}</h1>
+          <p style={{opacity: 0.7, marginTop: '5px'}}>{didWin ? 'Xuất sắc lắm!' : 'Lần sau sẽ may mắn hơn!'}</p>
+          <button className="btn btn-primary" style={{marginTop: '20px'}} onClick={() => window.location.reload()}>Chơi Lại</button>
         </div>
       </div>
     );
   }
 
+  // ============ GAME ============
   return (
-    <div className="app-container">
-      {errorMsg && (
-        <div style={{ position: 'fixed', top: '20px', left: '50%', transform: 'translateX(-50%)', background: '#ef4444', color: 'white', padding: '10px 20px', borderRadius: '10px', zIndex: 1000, fontWeight: 600, fontSize: '0.9rem' }}>
-          {errorMsg}
-        </div>
-      )}
+    <div className="app-container game-active">
+      {errorMsg && <div className="error-toast">{errorMsg}</div>}
 
       {showUnoEffect && (
-        <div style={{
-          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 9999,
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          backgroundColor: 'rgba(225, 29, 72, 0.4)',
-          pointerEvents: 'none'
-        }}>
-          <h1 style={{
-            fontSize: 'min(15rem, 40vw)', color: '#facc15', textShadow: '0 0 50px #ef4444, 5px 5px 0 #ef4444',
-            transform: 'rotate(-10deg)', animation: 'pop-in 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275)'
-          }}>UNO!</h1>
-        </div>
+        <div className="uno-overlay"><h1 className="uno-shout-text">UNO!</h1></div>
       )}
 
       {showColorPicker && (
@@ -257,110 +265,84 @@ function App() {
               <div className="color-btn bg-Xanh-lá" onClick={() => handleColorSelected('Xanh lá')}></div>
               <div className="color-btn bg-Xanh-dương" onClick={() => handleColorSelected('Xanh dương')}></div>
             </div>
-            <button className="btn" style={{ background: '#6b7280' }} onClick={() => setShowColorPicker(false)}>Huỷ</button>
+            <button className="btn" style={{background: '#6b7280'}} onClick={() => setShowColorPicker(false)}>Huỷ</button>
           </div>
         </div>
       )}
 
       <div className="game-board">
-        {/* === ĐỐI THỦ === */}
+        {/* ĐỐI THỦ */}
         <div className="opponent-area">
-          <div style={{ display: 'flex', justifyContent: 'center', gap: '10px', width: '100%', flexWrap: 'wrap' }}>
-            <div className="glass-panel status-badge" style={{ background: !gameState.is_my_turn ? '#fda4af' : 'white' }}>
-              Đối thủ: {gameState.opponent_card_count} lá
-            </div>
-            {gameState.can_catch && (
-              <button className="btn" style={{ background: '#10b981', padding: '6px 14px', fontSize: '0.85rem' }} onClick={handleCatchUno}>
-                Bắt lỗi UNO!
-              </button>
-            )}
-          </div>
-          
-          <div className="cards-hand opponent-hand" style={{ pointerEvents: 'none' }}>
+          <PlayerBadge
+            info={gameState.opponent_info}
+            cardCount={gameState.opponent_card_count}
+            isActive={!gameState.is_my_turn}
+            isSelf={false}
+            timer={!gameState.is_my_turn ? localTime : 0}
+            maxTime={15}
+            canCatch={gameState.can_catch}
+            onCatch={handleCatchUno}
+          />
+          <div className="cards-hand opponent-hand">
             {Array.from({ length: gameState.opponent_card_count }).map((_, i) => (
-              <div key={i} className="uno-card-wrapper Đỏ">
-                 <div className="uno-card-inner" style={{background: '#e11d48'}}>
-                    <div className="uno-card-oval" style={{background: '#be123c', boxShadow: 'none'}}></div>
-                    <div className="uno-card-center-value" style={{color: '#facc15', textShadow: '2px 2px 0px rgba(0,0,0,0.5)', fontSize: '1.6rem', transform: 'rotate(-25deg)', textAlign: 'center'}}>UNO</div>
-                 </div>
-              </div>
+              <OpponentCard key={i} small />
             ))}
-          </div>
-          
-          {/* Thanh thời gian đối thủ */}
-          <div style={{ width: '100%', maxWidth: '400px' }}>
-            {renderTimerBar(!gameState.is_my_turn)}
           </div>
         </div>
 
-        {/* === KHU VỰC GIỮA === */}
+        {/* TOAST */}
+        {lastMessage && <div className="mini-toast">{lastMessage}</div>}
+
+        {/* CENTER */}
         <div className="center-area">
-          <div className="messages glass-panel">
-            <h3 style={{ textTransform: 'uppercase', fontSize: '0.7rem', marginBottom: '5px', opacity: 0.7 }}>Nhật ký</h3>
-            {gameState.messages?.slice(-5).map((m, i) => (
-              <div key={i} className="message-item">- {m}</div>
-            ))}
-          </div>
-
           <div className="pile-container">
-            <div style={{ fontWeight: 600, color: 'var(--pink-dark)', fontSize: '0.85rem' }}>Bộ bài</div>
-            <UnoCard isDrawDeck={true} drawStack={gameState.draw_stack} onClick={handleDrawCard} color="Đỏ" value="UNO" type="number" />
+            <UnoCard isDrawDeck drawStack={gameState.draw_stack} onClick={handleDrawCard} color="Đỏ" value="UNO" type="number" />
+            <div className="pile-label">Bộ bài</div>
           </div>
-
           <div className="pile-container">
-            <div style={{ fontWeight: 600, color: 'var(--pink-dark)', fontSize: '0.85rem' }}>Đã đánh</div>
             {gameState.last_played_card ? (
-              <UnoCard 
-                color={gameState.last_played_card.color}
-                value={gameState.last_played_card.value}
-                type={gameState.last_played_card.type}
-              />
+              <UnoCard color={gameState.last_played_card.color} value={gameState.last_played_card.value} type={gameState.last_played_card.type} />
             ) : (
-              <div className="deck-placeholder">Empty</div>
+              <div className="deck-placeholder">—</div>
             )}
+            <div className="pile-label">Đã đánh</div>
           </div>
         </div>
 
-        {/* === NGƯỜI CHƠI === */}
+        {/* NGƯỜI CHƠI */}
         <div className="player-area">
-          {/* Thanh thời gian của mình */}
-          <div style={{ width: '100%', maxWidth: '400px' }}>
-            {renderTimerBar(gameState.is_my_turn)}
-          </div>
-
           <div className="action-bar">
             {gameState.is_my_turn && gameState.draw_stack > 0 ? (
-               <button className="btn" style={{ background: '#e11d48', animation: 'pulse 1s infinite' }} onClick={handleDrawCard}>
-                 CHỊU PHẠT {gameState.draw_stack} LÁ
-               </button>
+              <button className="btn btn-danger pulse-anim" onClick={handleDrawCard}>CHỊU PHẠT {gameState.draw_stack} LÁ</button>
             ) : gameState.has_drawn && gameState.is_my_turn ? (
-               <button className="btn" style={{ background: '#6b7280' }} onClick={() => socket.emit('pass_turn', {})}>
-                 BỎ LƯỢT
-               </button>
+              <button className="btn btn-secondary" onClick={handlePassTurn}>BỎ LƯỢT</button>
             ) : null}
-            
-            <div className="glass-panel status-badge" style={{ background: gameState.is_my_turn ? '#fda4af' : 'white' }}>
-              {gameState.is_my_turn ? "LƯỢT CỦA BẠN" : "Đợi đối thủ..."}
-            </div>
-            
-            {(gameState.hand?.length === 1) && (
-              <button className="btn" style={{ background: '#f59e0b', animation: 'pulse 0.5s infinite alternate' }} onClick={handleCallUno}>
-                HÔ UNO!
-              </button>
+            {gameState.hand?.length <= 2 && gameState.hand?.length >= 1 && !gameState.uno_called && (
+              <button className="btn btn-uno pulse-anim" onClick={handleCallUno}>HÔ UNO!</button>
             )}
           </div>
 
           <div className="cards-hand">
             {gameState.hand?.map((card, index) => (
-              <UnoCard 
-                key={index}
+              <UnoCard
+                key={`${card.color}-${card.value}-${index}`}
                 color={card.color}
                 value={card.value}
                 type={card.type}
                 onClick={() => handlePlayCard(index)}
+                isHinted={gameState.is_my_turn && gameState.playable_indices?.includes(index)}
               />
             ))}
           </div>
+
+          <PlayerBadge
+            info={gameState.my_info}
+            cardCount={gameState.hand?.length || 0}
+            isActive={gameState.is_my_turn}
+            isSelf
+            timer={gameState.is_my_turn ? localTime : 0}
+            maxTime={15}
+          />
         </div>
       </div>
     </div>

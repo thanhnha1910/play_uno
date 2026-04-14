@@ -24,6 +24,7 @@ def create_deck():
 class UnoGame:
     def __init__(self):
         self.players = [] # Danh sách id (tối đa 2)
+        self.player_info = {} # key: player_id, value: {nickname, avatar}
         self.hands = {} # key: player_id, value: danh sách bài
         self.deck = []
         self.discard_pile = []
@@ -42,9 +43,10 @@ class UnoGame:
         if len(self.messages) > 10:
             self.messages.pop(0)
 
-    def add_player(self, player_id):
+    def add_player(self, player_id, nickname='Player', avatar='🐱'):
         if len(self.players) < 2 and player_id not in self.players:
             self.players.append(player_id)
+            self.player_info[player_id] = {'nickname': nickname, 'avatar': avatar}
             self.uno_status[player_id] = False
             return True
         return False
@@ -231,7 +233,7 @@ class UnoGame:
 
     def call_uno(self, player_id):
         if self.status == "playing" and player_id in self.players:
-            if len(self.hands[player_id]) == 1 or len(self.hands[player_id]) == 2:
+            if (len(self.hands[player_id]) == 1 or len(self.hands[player_id]) == 2) and not self.uno_status[player_id]:
                 self.uno_status[player_id] = True
                 self.log("Một người chơi đã hô UNO!")
                 return True, "Bạn đã hô UNO!"
@@ -255,16 +257,36 @@ class UnoGame:
         # Tính toán turn_time_left để gửi về frontend
         time_left = max(0, int(self.turn_deadline - time.time())) if self.status == 'playing' else 0
         
+        # Tính toán playable cards nếu là lượt của player
+        is_my_turn = self.get_current_player() == player_id if self.status == 'playing' else False
+        hand = self.hands.get(player_id, [])
+        playable_indices = []
+        if is_my_turn and self.status == 'playing':
+            for i, card in enumerate(hand):
+                if self.can_play(card):
+                    playable_indices.append(i)
+        
+        # Fix winner logic
+        if self.winner:
+            winner_val = True if self.winner == player_id else False
+        else:
+            winner_val = None
+        
         return {
             'status': self.status,
-            'is_my_turn': self.get_current_player() == player_id if self.status == 'playing' else False,
+            'is_my_turn': is_my_turn,
             'has_drawn': self.has_drawn_this_turn if self.get_current_player() == player_id else False,
-            'hand': self.hands.get(player_id, []),
+            'hand': hand,
             'opponent_card_count': len(self.hands.get(opponent, [])) if opponent else 0,
             'last_played_card': self.last_played_card,
             'draw_stack': self.draw_stack,
-            'messages': self.messages,
-            'winner': self.winner == player_id if self.winner else (False if not self.winner else 'opponent'),
+            'messages': self.messages[-3:],
+            'winner': winner_val,
             'can_catch': opponent and len(self.hands.get(opponent, [])) == 1 and not self.uno_status.get(opponent, False),
-            'time_left': time_left
+            'time_left': time_left,
+            'uno_called': self.uno_status.get(player_id, False),
+            'playable_indices': playable_indices,
+            'my_info': self.player_info.get(player_id, {'nickname': 'You', 'avatar': '🐱'}),
+            'opponent_info': self.player_info.get(opponent, {'nickname': 'Opponent', 'avatar': '🐶'}) if opponent else None,
+            'player_count': len(self.players)
         }

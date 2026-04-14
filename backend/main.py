@@ -29,6 +29,8 @@ async def disconnect(sid):
 @sio.event
 async def join_room(sid, data):
     room_id = data.get('room_id')
+    nickname = data.get('nickname', 'Player')
+    avatar = data.get('avatar', '🐱')
     if not room_id:
         await sio.emit('error_msg', {'message': "Vui lòng nhập mã phòng!"}, to=sid)
         return
@@ -44,11 +46,11 @@ async def join_room(sid, data):
         await sio.emit('error_msg', {'message': "Phòng đã đầy (tối đa 2 người)!"}, to=sid)
         return
         
-    game.add_player(sid)
+    game.add_player(sid, nickname, avatar)
     player_rooms[sid] = room_id
     sio.enter_room(sid, room_id)
     
-    print(f"Người chơi {sid} đã vào phòng {room_id}. Tổng: {len(game.players)}/2")
+    print(f"Người chơi {nickname} ({sid}) đã vào phòng {room_id}. Tổng: {len(game.players)}/2")
     
     if len(game.players) == 2:
         game.start_game()
