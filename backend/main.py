@@ -19,42 +19,51 @@ async def disconnect(sid):
     print(f"Người chơi {sid} đã ngắt kết nối.")
     if sid in player_rooms:
         room_id = player_rooms[sid]
-        game = games[room_id]
-        game.remove_player(sid)
-        del player_rooms[sid]
-        await broadcast_state(room_id)
-        if len(game.players) == 0:
-            del games[room_id]
+        if room_id in games:
+            game = games[room_id]
+            game.remove_player(sid)
+            del player_rooms[sid]
+            await broadcast_state(room_id)
+            if len(game.players) == 0:
+                del games[room_id]
 
 @sio.event
 async def join_room(sid, data):
     room_id = data.get('room_id')
     nickname = data.get('nickname', 'Player')
     avatar = data.get('avatar', '🐱')
+    max_players = data.get('max_players', 2)
+    
     if not room_id:
         await sio.emit('error_msg', {'message': "Vui lòng nhập mã phòng!"}, to=sid)
         return
         
     room_id = room_id.strip().lower()
     
+    # Tạo phòng mới hoặc join phòng cũ
     if room_id not in games:
-        games[room_id] = UnoGame()
+        games[room_id] = UnoGame(max_players=max_players)
         
     game = games[room_id]
     
-    if len(game.players) >= 2:
-        await sio.emit('error_msg', {'message': "Phòng đã đầy (tối đa 2 người)!"}, to=sid)
+    if game.status == "playing":
+        await sio.emit('error_msg', {'message': "Phòng đang chơi, không thể vào!"}, to=sid)
+        return
+    
+    if len(game.players) >= game.max_players:
+        await sio.emit('error_msg', {'message': f"Phòng đã đầy ({game.max_players} người)!"}, to=sid)
         return
         
     game.add_player(sid, nickname, avatar)
     player_rooms[sid] = room_id
     sio.enter_room(sid, room_id)
     
-    print(f"Người chơi {nickname} ({sid}) đã vào phòng {room_id}. Tổng: {len(game.players)}/2")
+    print(f"[JOIN] {nickname} ({sid}) vào phòng {room_id}. Tổng: {len(game.players)}/{game.max_players}")
     
-    if len(game.players) == 2:
+    # Auto-start khi đủ người
+    if len(game.players) == game.max_players:
         game.start_game()
-        print(f"Game bắt đầu ở phòng {room_id}!")
+        print(f"[START] Game bắt đầu ở phòng {room_id} ({game.max_players} người)!")
     
     await broadcast_state(room_id)
 
@@ -150,34 +159,28 @@ async def startup_event():
     asyncio.create_task(timer_loop())
 
 # Logic phục vụ Frontend (React)
-# Lưu ý: Cấu hình này phải nằm SAU khi đã định nghĩa các API/SocketIO routes khác
 frontend_dist = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "frontend", "dist"))
 print(f"[DEBUG] Frontend dist path: {frontend_dist}")
 print(f"[DEBUG] Path exists: {os.path.exists(frontend_dist)}")
 
 if os.path.exists(frontend_dist):
-    # 1. Mount folder assets cho CSS/JS
     assets_path = os.path.join(frontend_dist, "assets")
     if os.path.exists(assets_path):
         app.mount("/assets", StaticFiles(directory=assets_path), name="assets")
     
-    # 2. Phục vụ index.html cho route gốc /
     @app.get("/")
     async def serve_index():
         return FileResponse(os.path.join(frontend_dist, "index.html"))
 
-    # 3. Phục vụ các file khác (manifest, favicon, etc) hoặc trả về index.html (SPA logic)
     @app.get("/{full_path:path}")
     async def serve_spa(full_path: str):
         file_path = os.path.join(frontend_dist, full_path)
         if os.path.isfile(file_path):
             return FileResponse(file_path)
-        # Nếu không thấy file, trả về index.html để React Router xử lý
         return FileResponse(os.path.join(frontend_dist, "index.html"))
 else:
     @app.get("/")
     async def fallback():
         return {"error": "Frontend build not found", "path_tried": frontend_dist}
 
-# Dùng socket_app là entrypoint thật sự cho Uvicorn. Nó wrap app FastAPI.
 socket_app = socketio.ASGIApp(sio, app)

@@ -7,32 +7,35 @@
   --glass-bg: rgba(255, 255, 255, 0.45);
   --glass-border: rgba(255, 255, 255, 0.65);
   --text-main: #4c0519;
-  --card-width: 82px;
-  --card-height: 120px;
-  --card-small-width: 52px;
-  --card-small-height: 76px;
+  --card-width: 72px;
+  --card-height: 105px;
+  --card-small-width: 44px;
+  --card-small-height: 64px;
+  --table-bg: rgba(16, 69, 29, 0.08);
 }
+
+* { box-sizing: border-box; }
 
 body {
   margin: 0;
   padding: 0;
   font-family: 'Outfit', sans-serif;
-  background: linear-gradient(160deg, #fff1f2 0%, #ffe4e6 40%, #fecdd3 100%);
-  color: var(--text-main);
+  background: linear-gradient(160deg, #1a1a2e 0%, #16213e 40%, #0f3460 100%);
+  color: #e2e8f0;
   min-height: 100vh;
   min-height: 100dvh;
   display: flex;
   flex-direction: column;
-  overflow-x: hidden;
-  overflow-y: auto;
+  overflow: hidden;
 }
 
 #root {
   width: 100vw;
-  min-height: 100vh;
-  min-height: 100dvh;
+  height: 100vh;
+  height: 100dvh;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
 }
 
 h1, h2, h3 {
@@ -44,10 +47,12 @@ h1, h2, h3 {
    GLASS PANEL
    ==================================================== */
 .glass-panel {
-  background: rgba(255, 255, 255, 0.7);
-  border: 1px solid var(--glass-border);
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
   border-radius: 24px;
-  box-shadow: 0 8px 32px 0 rgba(225, 29, 72, 0.08);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
 }
 
 /* ====================================================
@@ -64,7 +69,7 @@ h1, h2, h3 {
   font-size: 1rem;
   cursor: pointer;
   transition: all 0.2s ease;
-  box-shadow: 0 4px 14px 0 rgba(225, 29, 72, 0.3);
+  box-shadow: 0 4px 14px rgba(225, 29, 72, 0.3);
   white-space: nowrap;
 }
 
@@ -116,21 +121,26 @@ h1, h2, h3 {
 .input-field {
   padding: 12px 20px;
   border-radius: 99px;
-  border: 2px solid var(--pink-primary);
+  border: 2px solid rgba(255, 255, 255, 0.15);
   font-size: 1rem;
   outline: none;
   width: 100%;
   max-width: 260px;
   text-align: center;
   font-family: 'Outfit', sans-serif;
-  background: rgba(255,255,255,0.7);
+  background: rgba(255, 255, 255, 0.08);
+  color: #e2e8f0;
   transition: border-color 0.2s ease, box-shadow 0.2s ease;
   box-sizing: border-box;
 }
 
+.input-field::placeholder {
+  color: rgba(226, 232, 240, 0.4);
+}
+
 .input-field:focus {
   border-color: var(--pink-dark);
-  box-shadow: 0 0 0 3px rgba(225, 29, 72, 0.15);
+  box-shadow: 0 0 0 3px rgba(225, 29, 72, 0.2);
 }
 
 /* ====================================================
@@ -144,11 +154,13 @@ h1, h2, h3 {
   flex: 1;
   padding: 20px;
   box-sizing: border-box;
+  height: 100%;
 }
 
 .game-active {
-  justify-content: flex-start;
-  padding: 10px;
+  justify-content: stretch;
+  padding: 0;
+  overflow: hidden;
 }
 
 /* ====================================================
@@ -164,9 +176,9 @@ h1, h2, h3 {
 
 .lobby h1 {
   font-size: 3.5rem;
-  color: var(--pink-dark);
+  color: #facc15;
   margin-bottom: 8px;
-  text-shadow: 2px 2px 4px rgba(255, 255, 255, 0.6);
+  text-shadow: 0 0 30px rgba(250, 204, 21, 0.3);
   letter-spacing: -1px;
 }
 
@@ -174,8 +186,8 @@ h1, h2, h3 {
   margin: 16px auto;
   width: 36px;
   height: 36px;
-  border: 3px solid var(--pink-primary);
-  border-top-color: var(--pink-dark);
+  border: 3px solid rgba(255, 255, 255, 0.15);
+  border-top-color: #facc15;
   border-radius: 50%;
   animation: spin 1s linear infinite;
 }
@@ -183,7 +195,8 @@ h1, h2, h3 {
 .lobby-sub {
   margin-bottom: 10px;
   font-weight: 600;
-  opacity: 0.8;
+  opacity: 0.7;
+  color: #cbd5e1;
 }
 
 .lobby-form {
@@ -195,18 +208,18 @@ h1, h2, h3 {
 }
 
 .room-code {
-  color: var(--pink-dark);
+  color: #facc15;
   font-size: 1.3rem;
   letter-spacing: 2px;
 }
 
 /* Draw deck card inner */
 .draw-deck-inner {
-  background: #e11d48 !important;
+  background: #1f2937 !important;
 }
 
 .draw-deck-oval {
-  background: #be123c !important;
+  background: #111827 !important;
   box-shadow: none !important;
 }
 
@@ -215,7 +228,7 @@ h1, h2, h3 {
   z-index: 2;
   color: #facc15;
   text-shadow: 2px 2px 0px rgba(0,0,0,0.5);
-  font-size: 2rem;
+  font-size: 1.6rem;
   font-weight: 900;
   transform: rotate(-25deg);
   text-align: center;
@@ -223,14 +236,15 @@ h1, h2, h3 {
 }
 
 .draw-stack-num {
-  font-size: 1rem;
-  color: white;
+  font-size: 0.85rem;
+  color: #ef4444;
+  font-weight: 800;
 }
 
 .wild-color-label {
   position: absolute;
   bottom: 4px;
-  font-size: 0.65rem;
+  font-size: 0.6rem;
   color: white;
   z-index: 10;
   font-weight: bold;
@@ -255,10 +269,10 @@ h1, h2, h3 {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(255,255,255,0.6);
+  background: rgba(255,255,255,0.06);
   border-radius: 50%;
-  border: 3px solid var(--pink-dark);
-  box-shadow: 0 4px 16px rgba(225, 29, 72, 0.15);
+  border: 3px solid rgba(250, 204, 21, 0.6);
+  box-shadow: 0 0 20px rgba(250, 204, 21, 0.15);
 }
 
 .avatar-grid {
@@ -277,7 +291,7 @@ h1, h2, h3 {
   align-items: center;
   justify-content: center;
   border-radius: 50%;
-  background: rgba(255,255,255,0.5);
+  background: rgba(255,255,255,0.06);
   cursor: pointer;
   transition: all 0.2s ease;
   border: 2px solid transparent;
@@ -285,14 +299,14 @@ h1, h2, h3 {
 
 .avatar-option:hover {
   transform: scale(1.15);
-  background: rgba(255,255,255,0.8);
+  background: rgba(255,255,255,0.12);
 }
 
 .avatar-active {
-  border-color: var(--pink-dark);
-  background: rgba(255,255,255,0.9);
+  border-color: #facc15;
+  background: rgba(250, 204, 21, 0.1);
   transform: scale(1.1);
-  box-shadow: 0 2px 8px rgba(225, 29, 72, 0.2);
+  box-shadow: 0 0 12px rgba(250, 204, 21, 0.2);
 }
 
 /* ====================================================
@@ -302,18 +316,31 @@ h1, h2, h3 {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 10px;
-  padding: 8px 16px 8px 8px;
-  border-radius: 20px;
-  background: rgba(255,255,255,0.7);
-  border: 1px solid rgba(255,255,255,0.6);
+  gap: 8px;
+  padding: 6px 14px 6px 6px;
+  border-radius: 16px;
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   position: relative;
-  min-width: 160px;
+  min-width: 120px;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
 }
 
 .badge-active {
-  background: rgba(255,255,255,0.85);
-  box-shadow: 0 2px 12px rgba(225, 29, 72, 0.1);
+  background: rgba(250, 204, 21, 0.12);
+  border-color: rgba(250, 204, 21, 0.3);
+  box-shadow: 0 0 16px rgba(250, 204, 21, 0.1);
+}
+
+.badge-self {
+  background: rgba(225, 29, 72, 0.12);
+  border-color: rgba(225, 29, 72, 0.25);
+}
+
+.badge-self.badge-active {
+  background: rgba(250, 204, 21, 0.15);
+  border-color: rgba(250, 204, 21, 0.4);
 }
 
 .badge-avatar-wrap {
@@ -321,15 +348,15 @@ h1, h2, h3 {
 }
 
 .badge-avatar {
-  width: 44px;
-  height: 44px;
-  font-size: 1.6rem;
+  width: 36px;
+  height: 36px;
+  font-size: 1.3rem;
   line-height: 1;
   display: flex;
   align-items: center;
   justify-content: center;
   border-radius: 50%;
-  background: rgba(255,255,255,0.5);
+  background: rgba(255,255,255,0.08);
   transition: box-shadow 0.3s ease;
 }
 
@@ -341,26 +368,25 @@ h1, h2, h3 {
 
 .badge-name {
   font-weight: 700;
-  font-size: 0.9rem;
-  color: var(--text-main);
+  font-size: 0.8rem;
+  color: #f1f5f9;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  max-width: 100px;
+  max-width: 80px;
 }
 
 .badge-cards {
-  font-size: 0.75rem;
-  color: var(--pink-dark);
+  font-size: 0.7rem;
+  color: #facc15;
   font-weight: 600;
-  opacity: 0.8;
 }
 
-/* Timer Bar — nổi bật, dễ thấy */
+/* Timer Bar */
 .badge-timer-bar {
   width: 100%;
-  height: 8px;
-  background: rgba(0,0,0,0.08);
+  height: 4px;
+  background: rgba(255, 255, 255, 0.08);
   border-radius: 8px;
   overflow: hidden;
   position: relative;
@@ -376,81 +402,447 @@ h1, h2, h3 {
 
 .badge-timer-text {
   position: absolute;
-  right: 6px;
+  right: 4px;
   top: 50%;
   transform: translateY(-50%);
-  font-size: 0.6rem;
+  font-size: 0.5rem;
   font-weight: 800;
-  color: var(--text-main);
+  color: white;
   line-height: 1;
 }
 
 /* ====================================================
-   GAME BOARD LAYOUT
+   TURN INDICATORS
    ==================================================== */
-.game-board {
-  display: flex;
-  flex-direction: column;
-  width: 100%;
-  max-width: 900px;
-  margin: 0 auto;
-  flex: 1;
-  box-sizing: border-box;
-  gap: 6px;
+
+/* Pulsing dot on active badge */
+.badge-turn-dot {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #facc15;
+  box-shadow: 0 0 8px #facc15, 0 0 16px rgba(250, 204, 21, 0.4);
+  animation: turn-dot-pulse 1.2s ease-in-out infinite;
+  z-index: 20;
 }
 
-.opponent-area {
+@keyframes turn-dot-pulse {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.4); opacity: 0.7; }
+}
+
+/* "Đang đánh..." label on opponent badges */
+.badge-turn-label {
+  font-size: 0.55rem;
+  font-weight: 700;
+  color: #facc15;
+  letter-spacing: 0.5px;
+  animation: turn-label-blink 1.5s ease-in-out infinite;
+}
+
+@keyframes turn-label-blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+/* Active badge glow animation */
+.badge-active {
+  animation: badge-glow 2s ease-in-out infinite;
+}
+
+@keyframes badge-glow {
+  0%, 100% { box-shadow: 0 0 8px rgba(250, 204, 21, 0.15); }
+  50% { box-shadow: 0 0 20px rgba(250, 204, 21, 0.3), 0 0 40px rgba(250, 204, 21, 0.1); }
+}
+
+/* "LƯỢT CỦA BẠN" banner */
+.my-turn-banner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 6px 20px;
+  background: linear-gradient(135deg, rgba(250, 204, 21, 0.2), rgba(245, 158, 11, 0.15));
+  border: 1px solid rgba(250, 204, 21, 0.4);
+  border-radius: 14px;
+  color: #facc15;
+  font-size: 0.85rem;
+  font-weight: 800;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  animation: my-turn-glow 1.5s ease-in-out infinite;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.my-turn-icon {
+  font-size: 1rem;
+  animation: bounce-finger 1s ease-in-out infinite;
+}
+
+@keyframes bounce-finger {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-4px); }
+}
+
+@keyframes my-turn-glow {
+  0%, 100% { box-shadow: 0 0 10px rgba(250, 204, 21, 0.15); }
+  50% { box-shadow: 0 0 24px rgba(250, 204, 21, 0.3), 0 0 48px rgba(250, 204, 21, 0.1); }
+}
+
+/* Glow on player area when active */
+.my-turn-active {
+  background: linear-gradient(to top, rgba(250, 204, 21, 0.04) 0%, transparent 60%);
+}
+
+/* "Đang chờ đối thủ..." label */
+.waiting-turn-label {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.35);
+  letter-spacing: 0.5px;
+  padding: 4px 0;
+}
+
+/* ====================================================
+   ROOM SIZE PICKER
+   ==================================================== */
+.room-size-picker {
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 8px;
+  margin: 10px 0;
 }
 
+.room-size-label {
+  font-weight: 700;
+  font-size: 0.85rem;
+  color: #cbd5e1;
+}
+
+.room-size-options {
+  display: flex;
+  gap: 8px;
+}
+
+.room-size-btn {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  border: 2px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255,255,255,0.06);
+  font-weight: 800;
+  font-size: 1.1rem;
+  color: #e2e8f0;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  font-family: 'Outfit', sans-serif;
+}
+
+.room-size-btn:hover {
+  border-color: rgba(250, 204, 21, 0.3);
+  background: rgba(255,255,255,0.1);
+}
+
+.room-size-active {
+  border-color: #facc15;
+  background: rgba(250, 204, 21, 0.2);
+  color: #facc15;
+  box-shadow: 0 0 12px rgba(250, 204, 21, 0.15);
+}
+
+/* ====================================================
+   WAITING ROOM PLAYERS
+   ==================================================== */
+.waiting-players {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: center;
+  margin: 12px 0;
+}
+
+.waiting-player-chip {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  background: rgba(255,255,255,0.06);
+  border-radius: 20px;
+  border: 1px solid rgba(255,255,255,0.1);
+  font-weight: 600;
+  font-size: 0.85rem;
+  color: #e2e8f0;
+}
+
+.waiting-avatar {
+  font-size: 1.2rem;
+}
+
+/* ====================================================
+   GAME TABLE — CSS GRID LAYOUT
+   ==================================================== */
+.game-table {
+  width: 100%;
+  height: 100%;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  grid-template-rows: auto 1fr auto;
+  grid-template-areas:
+    ". top ."
+    "left center right"
+    ". bottom .";
+  overflow: hidden;
+  background:
+    radial-gradient(ellipse at center, rgba(16, 185, 129, 0.06) 0%, transparent 70%),
+    linear-gradient(160deg, #1a1a2e 0%, #16213e 40%, #0f3460 100%);
+  position: relative;
+}
+
+/* Subtle felt texture */
+.game-table::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse 60% 50% at 50% 50%, rgba(16, 185, 129, 0.05) 0%, transparent 100%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ====================================================
+   GRID AREA SLOTS
+   ==================================================== */
+
+/* --- TOP opponent --- */
+.table-pos-top {
+  grid-area: top;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  padding: 8px 0 4px;
+  z-index: 5;
+  gap: 4px;
+}
+
+/* --- LEFT opponent --- */
+.table-pos-left {
+  grid-area: left;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 0 6px;
+  z-index: 5;
+  gap: 4px;
+}
+
+/* --- RIGHT opponent --- */
+.table-pos-right {
+  grid-area: right;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 0 6px;
+  z-index: 5;
+  gap: 4px;
+}
+
+/* --- BOTTOM (current player) --- */
+.table-pos-bottom {
+  grid-area: bottom;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  z-index: 10;
+  padding: 0 8px 8px;
+}
+
+/* --- CENTER (pile + deck) --- */
+.table-center {
+  grid-area: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1;
+}
+
+/* ====================================================
+   OPPONENT SLOT
+   ==================================================== */
+.opponent-slot {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+/* Side opponents show cards vertically */
+.table-pos-left .opponent-slot,
+.table-pos-right .opponent-slot {
+  flex-direction: column;
+}
+
+/* ====================================================
+   OPPONENT HANDS — directional stacking
+   ==================================================== */
+
+/* TOP: horizontal overlap */
+.opp-hand-top {
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+}
+
+.opp-hand-top .uno-card-wrapper {
+  margin-left: -16px;
+}
+.opp-hand-top .uno-card-wrapper:first-child {
+  margin-left: 0;
+}
+
+/* LEFT / RIGHT: vertical overlap */
+.opp-hand-left,
+.opp-hand-right {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.opp-hand-left .uno-card-wrapper,
+.opp-hand-right .uno-card-wrapper {
+  margin-top: -38px;
+}
+
+.opp-hand-left .uno-card-wrapper:first-child,
+.opp-hand-right .uno-card-wrapper:first-child {
+  margin-top: 0;
+}
+
+/* Extra count badge */
+.opp-extra-count {
+  font-size: 0.65rem;
+  font-weight: 800;
+  color: #facc15;
+  background: rgba(0, 0, 0, 0.5);
+  padding: 2px 8px;
+  border-radius: 10px;
+  margin-top: 4px;
+  z-index: 10;
+  border: 1px solid rgba(250, 204, 21, 0.3);
+}
+
+.opp-hand-top .opp-extra-count {
+  margin-top: 0;
+  margin-left: 4px;
+  align-self: center;
+}
+
+/* Compact badge for opponents */
+.badge-compact {
+  padding: 4px 8px;
+  gap: 4px;
+  min-width: 80px;
+}
+
+.badge-compact .badge-avatar {
+  width: 28px;
+  height: 28px;
+  font-size: 1rem;
+}
+
+.badge-compact .badge-name {
+  font-size: 0.7rem;
+  max-width: 60px;
+}
+
+.badge-compact .badge-cards {
+  font-size: 0.6rem;
+}
+
+/* ====================================================
+   CENTER AREA
+   ==================================================== */
 .center-area {
   display: flex;
   justify-content: center;
   align-items: center;
-  gap: 30px;
-  padding: 8px 0;
+  gap: 16px;
+  padding: 16px 20px;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  position: relative;
+  box-shadow: inset 0 0 40px rgba(0, 0, 0, 0.15);
+}
+
+/* Direction indicator */
+.direction-indicator {
+  position: absolute;
+  top: -28px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 0.9rem;
+  color: #facc15;
+  background: rgba(0, 0, 0, 0.4);
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-weight: 700;
+  border: 1px solid rgba(250, 204, 21, 0.2);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
 }
 
 .mini-toast {
+  position: absolute;
+  top: 8px;
+  left: 50%;
+  transform: translateX(-50%);
   text-align: center;
-  font-size: 0.8rem;
+  font-size: 0.75rem;
   font-weight: 600;
-  color: var(--pink-dark);
+  color: #facc15;
   padding: 5px 16px;
-  background: rgba(255, 255, 255, 0.7);
-  border-radius: 20px;
-  border: 1px solid var(--glass-border);
+  background: rgba(0, 0, 0, 0.6);
+  border-radius: 12px;
+  border: 1px solid rgba(250, 204, 21, 0.2);
   animation: fadeIn 0.3s ease-out;
   max-width: 280px;
-  margin: 0 auto;
+  z-index: 100;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
 }
 
 .pile-container {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 6px;
+  gap: 4px;
 }
 
 .pile-label {
-  font-size: 0.75rem;
-  font-weight: 600;
-  color: var(--pink-dark);
-  opacity: 0.7;
+  font-size: 0.6rem;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.4);
   text-transform: uppercase;
-  letter-spacing: 1px;
+  letter-spacing: 1.5px;
 }
 
 /* Player Area */
 .player-area {
-  padding: 5px 10px 15px;
+  padding: 4px 8px 8px;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
+  width: 100%;
 }
 
 /* ====================================================
@@ -460,10 +852,11 @@ h1, h2, h3 {
   display: flex;
   justify-content: center;
   flex-wrap: wrap;
-  gap: 8px;
-  padding: 8px 10px;
+  gap: 6px;
+  padding: 6px 8px;
   box-sizing: border-box;
   width: 100%;
+  max-width: 100%;
 }
 
 /* ====================================================
@@ -475,8 +868,8 @@ h1, h2, h3 {
   height: var(--card-height);
   border-radius: 8px;
   background: white;
-  padding: 5px;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.12);
+  padding: 4px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
   cursor: pointer;
   transition: transform 0.15s ease;
   user-select: none;
@@ -494,39 +887,45 @@ h1, h2, h3 {
 }
 
 .card-small .uno-card-center-value {
-  font-size: 1.4rem !important;
+  font-size: 1.2rem !important;
 }
 
 .card-small .uno-card-corner {
-  font-size: 0.55rem !important;
+  font-size: 0.5rem !important;
 }
 
-/* Card Hint — simple outline, zero animations */
+/* Card Hint */
 .card-hinted {
-  outline: 3px solid #f59e0b;
+  outline: 3px solid #facc15;
   outline-offset: 2px;
+  box-shadow: 0 0 12px rgba(250, 204, 21, 0.4), 0 2px 8px rgba(0, 0, 0, 0.3);
 }
 
-/* Instant tap feedback — feels responsive */
+/* Tap feedback */
 .cards-hand:not(.opponent-hand) .uno-card-wrapper:active {
   transform: scale(0.92) !important;
   opacity: 0.8;
 }
 
-/* Hover cards (desktop only) */
-.cards-hand:not(.opponent-hand) .uno-card-wrapper:hover {
-  transform: translateY(-10px) scale(1.06);
-  z-index: 50 !important;
+/* Hover (desktop) */
+@media (hover: hover) {
+  .cards-hand:not(.opponent-hand) .uno-card-wrapper:hover {
+    transform: translateY(-10px) scale(1.06);
+    z-index: 50 !important;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+  }
 }
+
 /* Opponent cards: compact overlap */
 .opponent-hand {
   gap: 0 !important;
   flex-wrap: nowrap !important;
   max-width: 100%;
   overflow: hidden;
+  padding: 0 !important;
 }
 .opponent-hand .uno-card-wrapper {
-  margin-left: -22px;
+  margin-left: -18px;
 }
 .opponent-hand .uno-card-wrapper:first-child {
   margin-left: 0;
@@ -549,7 +948,7 @@ h1, h2, h3 {
 
 /* Colors */
 .uno-card-wrapper.Đỏ { --card-color: #ef4444; }
-.uno-card-wrapper.Vàng { --card-color: #facc15; }
+.uno-card-wrapper.Vàng { --card-color: #eab308; }
 .uno-card-wrapper.Xanh-lá { --card-color: #22c55e; }
 .uno-card-wrapper.Xanh-dương { --card-color: #3b82f6; }
 .uno-card-wrapper.Đen { --card-color: #1f2937; }
@@ -566,14 +965,14 @@ h1, h2, h3 {
 }
 
 .uno-card-wrapper.Đen .uno-card-oval {
-  background: conic-gradient(from 45deg, #ef4444 25%, #3b82f6 0 50%, #facc15 0 75%, #22c55e 0);
+  background: conic-gradient(from 45deg, #ef4444 25%, #3b82f6 0 50%, #eab308 0 75%, #22c55e 0);
   box-shadow: inset 0 0 0 4px #1f2937, 0 2px 4px rgba(0,0,0,0.5);
 }
 
 .uno-card-center-value {
   position: relative;
   z-index: 2;
-  font-size: 2.8rem;
+  font-size: 2.4rem;
   font-weight: 900;
   color: var(--card-color);
   text-shadow: 2px 2px 0px white, -2px -2px 0px white, 2px -2px 0px white, -2px 2px 0px white, 3px 3px 6px rgba(0,0,0,0.4);
@@ -588,13 +987,13 @@ h1, h2, h3 {
 .uno-card-wrapper.Đen .uno-card-center-value {
   color: white;
   text-shadow: 2px 2px 0px black, -2px -2px 0px black, 2px -2px 0px black, -2px 2px 0px black, 3px 3px 6px rgba(0,0,0,0.5);
-  font-size: 1.8rem;
+  font-size: 1.5rem;
   transform: rotate(-15deg);
 }
 
 .uno-card-corner {
   position: absolute;
-  font-size: 0.95rem;
+  font-size: 0.8rem;
   font-weight: 800;
   color: white;
   text-shadow: 1px 1px 0px rgba(0,0,0,0.5);
@@ -653,7 +1052,7 @@ h1, h2, h3 {
 .color-picker {
   position: fixed;
   top: 0; left: 0; right: 0; bottom: 0;
-  background: rgba(0,0,0,0.55);
+  background: rgba(0, 0, 0, 0.7);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -668,6 +1067,10 @@ h1, h2, h3 {
   align-items: center;
 }
 
+.color-picker-modal h2 {
+  color: #f1f5f9;
+}
+
 .color-options {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -677,17 +1080,17 @@ h1, h2, h3 {
 .color-btn {
   width: 56px; height: 56px;
   border-radius: 50%;
-  border: 4px solid white;
+  border: 4px solid rgba(255, 255, 255, 0.3);
   cursor: pointer;
   transition: transform 0.2s, box-shadow 0.2s;
-  box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+  box-shadow: 0 4px 10px rgba(0,0,0,0.3);
 }
-.color-btn:hover { 
-  transform: scale(1.15); 
-  box-shadow: 0 6px 15px rgba(0,0,0,0.3);
+.color-btn:hover {
+  transform: scale(1.15);
+  box-shadow: 0 6px 15px rgba(0,0,0,0.4);
 }
 .bg-Đỏ { background: #ef4444; }
-.bg-Vàng { background: #facc15; }
+.bg-Vàng { background: #eab308; }
 .bg-Xanh-lá { background: #22c55e; }
 .bg-Xanh-dương { background: #3b82f6; }
 
@@ -695,11 +1098,11 @@ h1, h2, h3 {
   width: var(--card-width);
   height: var(--card-height);
   border-radius: 8px;
-  border: 2px dashed rgba(255,255,255,0.8);
+  border: 2px dashed rgba(255,255,255,0.15);
   display: flex;
   align-items: center;
   justify-content: center;
-  color: rgba(225, 29, 72, 0.3);
+  color: rgba(255, 255, 255, 0.15);
   font-weight: bold;
   font-size: 1.5rem;
 }
@@ -707,7 +1110,7 @@ h1, h2, h3 {
 /* Action bar */
 .action-bar {
   display: flex;
-  gap: 10px;
+  gap: 8px;
   align-items: center;
   flex-wrap: wrap;
   justify-content: center;
@@ -738,76 +1141,67 @@ h1, h2, h3 {
 }
 
 /* ====================================================
-   MOBILE RESPONSIVE
+   RESPONSIVE — TABLET (≤ 768px)
    ==================================================== */
 @media (max-width: 768px) {
   :root {
-    --card-width: 60px;
-    --card-height: 88px;
-    --card-small-width: 40px;
-    --card-small-height: 58px;
-  }
-
-  .game-board {
-    gap: 3px;
+    --card-width: 56px;
+    --card-height: 82px;
+    --card-small-width: 36px;
+    --card-small-height: 52px;
   }
 
   .center-area {
-    gap: 20px;
-    padding: 5px 0;
+    gap: 12px;
+    padding: 10px 14px;
+    border-radius: 14px;
+  }
+
+  .direction-indicator {
+    font-size: 0.75rem;
+    top: -22px;
+    padding: 3px 8px;
   }
 
   .mini-toast {
-    font-size: 0.7rem;
-    padding: 4px 12px;
-    max-width: 80%;
-  }
-
-  .pile-container {
-    gap: 3px;
+    font-size: 0.65rem;
+    padding: 4px 10px;
+    max-width: 70%;
   }
 
   .pile-label {
-    font-size: 0.65rem;
-  }
-
-  .player-area {
-    padding: 4px 5px 12px;
-    gap: 6px;
+    font-size: 0.55rem;
   }
 
   .cards-hand {
-    padding: 6px 5px;
-    gap: 5px;
-  }
-
-  .cards-hand:not(.opponent-hand) .uno-card-wrapper:hover {
-    transform: translateY(-8px) scale(1.04);
+    padding: 4px 5px;
+    gap: 4px;
   }
 
   .opponent-hand .uno-card-wrapper {
-    margin-left: -18px;
+    margin-left: -14px;
+  }
+
+  .opp-hand-left .uno-card-wrapper,
+  .opp-hand-right .uno-card-wrapper {
+    margin-top: -30px;
   }
 
   .uno-card-center-value {
-    font-size: 2rem;
+    font-size: 1.8rem;
   }
 
   .uno-card-wrapper.Đen .uno-card-center-value {
-    font-size: 1.3rem;
+    font-size: 1.1rem;
   }
 
   .uno-card-corner {
-    font-size: 0.65rem;
-  }
-
-  .action-bar {
-    gap: 6px;
+    font-size: 0.6rem;
   }
 
   .action-bar .btn {
     padding: 8px 14px;
-    font-size: 0.85rem !important;
+    font-size: 0.8rem !important;
   }
 
   .btn {
@@ -828,33 +1222,52 @@ h1, h2, h3 {
     height: 48px;
   }
 
-  /* Badge mobile */
   .player-badge {
-    padding: 6px 12px 6px 6px;
-    gap: 8px;
-    min-width: 140px;
+    padding: 4px 10px 4px 4px;
+    gap: 6px;
+    min-width: 100px;
   }
 
   .badge-avatar {
-    width: 36px;
-    height: 36px;
-    font-size: 1.3rem;
+    width: 30px;
+    height: 30px;
+    font-size: 1.1rem;
   }
 
   .badge-name {
-    font-size: 0.8rem;
-    max-width: 80px;
+    font-size: 0.7rem;
+    max-width: 70px;
   }
 
   .badge-cards {
-    font-size: 0.7rem;
+    font-size: 0.6rem;
   }
 
   .badge-timer-bar {
-    height: 6px;
+    height: 3px;
   }
 
   .badge-timer-text {
+    font-size: 0.45rem;
+  }
+
+  .badge-compact {
+    padding: 3px 6px;
+    min-width: 70px;
+  }
+
+  .badge-compact .badge-avatar {
+    width: 24px;
+    height: 24px;
+    font-size: 0.9rem;
+  }
+
+  .badge-compact .badge-name {
+    font-size: 0.6rem;
+    max-width: 50px;
+  }
+
+  .badge-compact .badge-cards {
     font-size: 0.5rem;
   }
 
@@ -869,27 +1282,91 @@ h1, h2, h3 {
     width: 36px;
     height: 36px;
   }
+
+  .draw-deck-label {
+    font-size: 1.2rem;
+  }
+
+  .draw-stack-num {
+    font-size: 0.7rem;
+  }
+
+  .player-area {
+    gap: 4px;
+    padding: 2px 4px 6px;
+  }
+
+  .table-pos-left,
+  .table-pos-right {
+    padding: 0 4px;
+  }
+
+  .table-pos-top {
+    padding: 6px 0 2px;
+  }
 }
 
-/* Extra small phones */
-@media (max-width: 400px) {
+/* ====================================================
+   RESPONSIVE — PHONE (≤ 480px)
+   ==================================================== */
+@media (max-width: 480px) {
   :root {
-    --card-width: 50px;
-    --card-height: 72px;
-    --card-small-width: 34px;
-    --card-small-height: 50px;
+    --card-width: 48px;
+    --card-height: 70px;
+    --card-small-width: 30px;
+    --card-small-height: 44px;
+  }
+
+  .game-table {
+    grid-template-columns: auto 1fr auto;
+    grid-template-rows: auto 1fr auto;
+  }
+
+  .center-area {
+    gap: 8px;
+    padding: 8px 10px;
+    border-radius: 12px;
   }
 
   .cards-hand {
-    gap: 4px;
+    gap: 3px;
+    padding: 3px 4px;
+  }
+
+  .opponent-hand .uno-card-wrapper {
+    margin-left: -12px;
+  }
+
+  .opp-hand-left .uno-card-wrapper,
+  .opp-hand-right .uno-card-wrapper {
+    margin-top: -24px;
+  }
+
+  .opp-hand-top .uno-card-wrapper {
+    margin-left: -12px;
   }
 
   .uno-card-center-value {
-    font-size: 1.5rem;
+    font-size: 1.4rem;
+  }
+
+  .uno-card-wrapper.Đen .uno-card-center-value {
+    font-size: 0.9rem;
   }
 
   .uno-card-corner {
     font-size: 0.5rem;
+  }
+
+  .direction-indicator {
+    font-size: 0.65rem;
+    top: -18px;
+    padding: 2px 6px;
+  }
+
+  .action-bar .btn {
+    padding: 6px 10px;
+    font-size: 0.7rem !important;
   }
 
   .lobby h1 {
@@ -904,5 +1381,47 @@ h1, h2, h3 {
     max-width: 220px;
     padding: 10px 16px;
     font-size: 0.9rem;
+  }
+
+  .color-btn {
+    width: 42px;
+    height: 42px;
+  }
+
+  .draw-deck-label {
+    font-size: 1rem;
+  }
+
+  .wild-color-label {
+    font-size: 0.5rem;
+  }
+}
+
+/* ====================================================
+   RESPONSIVE — Extra small (≤ 380px)
+   ==================================================== */
+@media (max-width: 380px) {
+  :root {
+    --card-width: 42px;
+    --card-height: 62px;
+    --card-small-width: 26px;
+    --card-small-height: 38px;
+  }
+
+  .cards-hand {
+    gap: 2px;
+  }
+
+  .uno-card-center-value {
+    font-size: 1.2rem;
+  }
+
+  .uno-card-corner {
+    font-size: 0.4rem;
+  }
+
+  .center-area {
+    gap: 6px;
+    padding: 6px 8px;
   }
 }

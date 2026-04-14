@@ -22,18 +22,20 @@ def create_deck():
     return deck
 
 class UnoGame:
-    def __init__(self):
-        self.players = [] # Danh sách id (tối đa 2)
-        self.player_info = {} # key: player_id, value: {nickname, avatar}
-        self.hands = {} # key: player_id, value: danh sách bài
+    def __init__(self, max_players=2):
+        self.max_players = max(2, min(4, max_players))  # Clamp 2-4
+        self.players = []
+        self.player_info = {}
+        self.hands = {}
         self.deck = []
         self.discard_pile = []
         self.current_turn_index = 0
-        self.status = "waiting" # waiting, playing, finished
+        self.play_direction = 1   # 1 = clockwise, -1 = counter-clockwise
+        self.status = "waiting"
         self.winner = None
-        self.draw_stack = 0 # Số lượng bài cộng dồn từ +2, +4
+        self.draw_stack = 0
         self.last_played_card = None
-        self.uno_status = {} # key: player_id, value: True/False đã hô Uno chưa
+        self.uno_status = {}
         self.messages = []
         self.turn_deadline = 0
         self.has_drawn_this_turn = False
@@ -44,7 +46,7 @@ class UnoGame:
             self.messages.pop(0)
 
     def add_player(self, player_id, nickname='Player', avatar='🐱'):
-        if len(self.players) < 2 and player_id not in self.players:
+        if len(self.players) < self.max_players and player_id not in self.players:
             self.players.append(player_id)
             self.player_info[player_id] = {'nickname': nickname, 'avatar': avatar}
             self.uno_status[player_id] = False
@@ -54,19 +56,33 @@ class UnoGame:
     def remove_player(self, player_id):
         if player_id in self.players:
             self.players.remove(player_id)
+            if player_id in self.hands:
+                del self.hands[player_id]
+            if player_id in self.player_info:
+                del self.player_info[player_id]
+            if player_id in self.uno_status:
+                del self.uno_status[player_id]
+            
             if self.status == "playing":
-                self.status = "finished"
-                self.winner = self.players[0] if self.players else None
-                self.log("Đối thủ đã thoát.")
+                # Nếu chỉ còn 1 người → thắng
+                if len(self.players) <= 1:
+                    self.status = "finished"
+                    self.winner = self.players[0] if self.players else None
+                    self.log("Đối thủ đã thoát. Trận đấu kết thúc!")
+                else:
+                    # Fix turn index nếu cần
+                    if self.current_turn_index >= len(self.players):
+                        self.current_turn_index = 0
+                    self.log("Một người chơi đã rời phòng.")
 
     def start_game(self):
-        if len(self.players) == 2:
+        if len(self.players) >= 2:
             self.deck = create_deck()
             for p in self.players:
                 self.hands[p] = [self.deal_card() for _ in range(7)]
                 self.uno_status[p] = False
                 
-            # Lật bài đầu tiên (không cho bài action để đơn giản)
+            # Lật bài đầu tiên (chỉ cho number)
             while True:
                 card = self.deal_card()
                 if card['type'] == 'number':
@@ -77,12 +93,13 @@ class UnoGame:
                     self.deck.append(card)
                     random.shuffle(self.deck)
             
-            self.current_turn_index = random.choice([0, 1])
+            self.current_turn_index = random.randint(0, len(self.players) - 1)
+            self.play_direction = 1
             self.status = "playing"
             self.draw_stack = 0
             self.winner = None
             self.messages = []
-            self.turn_deadline = time.time() + 15  # 15s cho lượt đầu
+            self.turn_deadline = time.time() + 15
             self.has_drawn_this_turn = False
             self.log("Trận đấu bắt đầu!")
             return True
@@ -103,19 +120,21 @@ class UnoGame:
         return self.players[self.current_turn_index]
 
     def switch_turn(self, skip=False):
-        if not skip:
-            self.current_turn_index = 1 - self.current_turn_index
+        n = len(self.players)
+        if n <= 1:
+            return
+        steps = 2 if skip else 1
+        self.current_turn_index = (self.current_turn_index + self.play_direction * steps) % n
         self.turn_deadline = time.time() + 15
         self.has_drawn_this_turn = False
 
     def check_timeout(self):
-        # Hàm kiểm tra và xử lý timeout. Trả về True nếu bị timeout và đã tự xử lý
         if self.status == "playing" and time.time() >= self.turn_deadline:
             curr_player = self.get_current_player()
             if self.draw_stack > 0:
                 self.log(f"Hết 15s! Bị ép phạt rút {self.draw_stack} lá.")
             else:
-                self.log(f"Đã hết 15s! Hệ thống tự động bắt phạt rút bài.")
+                self.log("Đã hết 15s! Hệ thống tự động bắt phạt rút bài.")
             self.draw_cards(curr_player, is_timeout=True)
             return True
         return False
@@ -123,7 +142,6 @@ class UnoGame:
     def can_play(self, card, is_stack_response=False):
         top_card = self.last_played_card
         if self.draw_stack > 0:
-            # Luật tự do Stack: Có màu +2 hoặc +4 đều được phép đập xuống bất kể dưới là gì
             if card['value'] in ['+2', '+4']:
                 return True
             return False
@@ -160,7 +178,6 @@ class UnoGame:
 
         if card['type'] == 'wild':
             if card['value'] == '+4':
-                # +4 không có quyền đổi màu, kế thừa màu của bộ bài bên dưới
                 card['color'] = self.last_played_card['color']
             else:
                 if chosen_color not in COLORS:
@@ -176,15 +193,24 @@ class UnoGame:
             self.draw_stack += 2
         elif card['value'] == '+4':
             self.draw_stack += 4
-        elif card['value'] in ['Mất lượt', 'Đổi chiều']:
+        elif card['value'] == 'Mất lượt':
             skip_next = True
+        elif card['value'] == 'Đổi chiều':
+            if len(self.players) == 2:
+                # 2 người: Đổi chiều = Mất lượt
+                skip_next = True
+            else:
+                # 3-4 người: đảo chiều kim đồng hồ
+                self.play_direction *= -1
 
-        self.log(f"Đánh lá {card['value']} {card['color']}")
+        info = self.player_info.get(player_id, {})
+        name = info.get('nickname', 'Player')
+        self.log(f"{name} đánh lá {card['value']} {card['color']}")
 
         if len(hand) == 0:
             self.status = "finished"
             self.winner = player_id
-            self.log("Trận đấu kết thúc!")
+            self.log(f"{name} đã thắng!")
             return True, "Thắng!"
 
         self.switch_turn(skip=skip_next)
@@ -209,7 +235,7 @@ class UnoGame:
         if self.draw_stack > 0:
             drawn_cards = []
             for _ in range(self.draw_stack):
-                drawn_cards.append(self.deal_card())  # Phạt = random thuần
+                drawn_cards.append(self.deal_card())
             self.hands[player_id].extend(drawn_cards)
             self.log(f"Bị phạt cộng dồn {self.draw_stack} lá.")
             self.draw_stack = 0
@@ -218,7 +244,6 @@ class UnoGame:
             return True, drawn_cards
             
         else:
-            # Rút thông minh — 50/50
             drawn_card = self.deal_card_smart()
             self.hands[player_id].append(drawn_card)
             
@@ -241,58 +266,87 @@ class UnoGame:
         if self.status == "playing" and player_id in self.players:
             if (len(self.hands[player_id]) == 1 or len(self.hands[player_id]) == 2) and not self.uno_status[player_id]:
                 self.uno_status[player_id] = True
-                self.log("Một người chơi đã hô UNO!")
+                info = self.player_info.get(player_id, {})
+                self.log(f"{info.get('nickname', 'Player')} đã hô UNO!")
                 return True, "Bạn đã hô UNO!"
         return False, "Không thể hô UNO lúc này."
 
-    def catch_uno(self, player_id):
-        if self.status == "playing":
-            opponent_idx = 1 - self.players.index(player_id)
-            opponent = self.players[opponent_idx]
-            if len(self.hands[opponent]) == 1 and not self.uno_status[opponent]:
-                self.hands[opponent].append(self.deal_card())
-                self.hands[opponent].append(self.deal_card())
-                self.log("Bắt lỗi UNO thành công! Đối thủ bị phạt 2 lá.")
+    def catch_uno(self, catcher_id):
+        """Bắt bất kỳ ai quên hô UNO (có 1 lá mà chưa hô)"""
+        if self.status != "playing":
+            return False, "Game chưa bắt đầu."
+        
+        for pid in self.players:
+            if pid == catcher_id:
+                continue
+            if len(self.hands.get(pid, [])) == 1 and not self.uno_status.get(pid, False):
+                self.hands[pid].append(self.deal_card())
+                self.hands[pid].append(self.deal_card())
+                info_catcher = self.player_info.get(catcher_id, {})
+                info_caught = self.player_info.get(pid, {})
+                self.log(f"{info_catcher.get('nickname', '?')} bắt lỗi {info_caught.get('nickname', '?')}! Phạt 2 lá.")
                 return True, "Bắt lỗi thành công!"
+        
         return False, "Không có ai quên hô UNO."
 
     def get_state_for_player(self, player_id):
-        opponent_idx = 1 - self.players.index(player_id) if player_id in self.players and len(self.players) == 2 else None
-        opponent = self.players[opponent_idx] if opponent_idx is not None else None
-        
-        # Tính toán turn_time_left để gửi về frontend
+        """Trả state cá nhân cho mỗi player"""
         time_left = max(0, int(self.turn_deadline - time.time())) if self.status == 'playing' else 0
         
-        # Tính toán playable cards nếu là lượt của player
-        is_my_turn = self.get_current_player() == player_id if self.status == 'playing' else False
+        is_my_turn = (self.get_current_player() == player_id) if self.status == 'playing' else False
         hand = self.hands.get(player_id, [])
+        
         playable_indices = []
         if is_my_turn and self.status == 'playing':
             for i, card in enumerate(hand):
                 if self.can_play(card):
                     playable_indices.append(i)
         
-        # Fix winner logic
+        # Winner
         if self.winner:
             winner_val = True if self.winner == player_id else False
         else:
             winner_val = None
-        
+
+        # Build opponents list (theo thứ tự kim đồng hồ từ player)
+        opponents = []
+        if len(self.players) >= 2:
+            my_idx = self.players.index(player_id) if player_id in self.players else 0
+            n = len(self.players)
+            for offset in range(1, n):
+                opp_idx = (my_idx + offset) % n
+                opp_id = self.players[opp_idx]
+                opp_is_active = (self.get_current_player() == opp_id) if self.status == 'playing' else False
+                can_catch_this = len(self.hands.get(opp_id, [])) == 1 and not self.uno_status.get(opp_id, False)
+                opponents.append({
+                    'info': self.player_info.get(opp_id, {'nickname': 'Player', 'avatar': '🐶'}),
+                    'card_count': len(self.hands.get(opp_id, [])),
+                    'is_active': opp_is_active,
+                    'can_catch': can_catch_this,
+                })
+
+        # Waiting room: trả danh sách player info
+        waiting_players = []
+        if self.status == 'waiting':
+            for pid in self.players:
+                waiting_players.append(self.player_info.get(pid, {}))
+
         return {
             'status': self.status,
             'is_my_turn': is_my_turn,
-            'has_drawn': self.has_drawn_this_turn if self.get_current_player() == player_id else False,
+            'has_drawn': self.has_drawn_this_turn if (self.status == 'playing' and self.get_current_player() == player_id) else False,
             'hand': hand,
-            'opponent_card_count': len(self.hands.get(opponent, [])) if opponent else 0,
+            'opponents': opponents,
             'last_played_card': self.last_played_card,
             'draw_stack': self.draw_stack,
             'messages': self.messages[-3:],
             'winner': winner_val,
-            'can_catch': opponent and len(self.hands.get(opponent, [])) == 1 and not self.uno_status.get(opponent, False),
             'time_left': time_left,
             'uno_called': self.uno_status.get(player_id, False),
             'playable_indices': playable_indices,
             'my_info': self.player_info.get(player_id, {'nickname': 'You', 'avatar': '🐱'}),
-            'opponent_info': self.player_info.get(opponent, {'nickname': 'Opponent', 'avatar': '🐶'}) if opponent else None,
-            'player_count': len(self.players)
+            'player_count': len(self.players),
+            'max_players': self.max_players,
+            'waiting_players': waiting_players,
+            'play_direction': self.play_direction,
         }
