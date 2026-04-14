@@ -501,30 +501,23 @@ h1, h2, h3 {
   font-size: 0.55rem !important;
 }
 
-/* Card Hint — simple border highlight, no box-shadow animation */
+/* Card Hint — simple outline, zero animations */
 .card-hinted {
   outline: 3px solid #f59e0b;
   outline-offset: 2px;
-  border-radius: 10px;
 }
 
-.card-hinted::before {
-  content: '👆';
-  position: absolute;
-  top: -20px;
-  left: 50%;
-  transform: translateX(-50%);
-  font-size: 0.85rem;
-  z-index: 10;
-  animation: bounceHint 1s ease-in-out infinite;
+/* Instant tap feedback — feels responsive */
+.cards-hand:not(.opponent-hand) .uno-card-wrapper:active {
+  transform: scale(0.92) !important;
+  opacity: 0.8;
 }
 
-/* Hover cards */
+/* Hover cards (desktop only) */
 .cards-hand:not(.opponent-hand) .uno-card-wrapper:hover {
   transform: translateY(-10px) scale(1.06);
   z-index: 50 !important;
 }
-
 /* Opponent cards: compact overlap */
 .opponent-hand {
   gap: 0 !important;
@@ -744,11 +737,6 @@ h1, h2, h3 {
   100% { transform: scale(1); }
 }
 
-@keyframes bounceHint {
-  0%, 100% { transform: translateX(-50%) translateY(0); }
-  50% { transform: translateX(-50%) translateY(-5px); }
-}
-
 /* ====================================================
    MOBILE RESPONSIVE
    ==================================================== */
@@ -880,11 +868,6 @@ h1, h2, h3 {
     font-size: 1.3rem;
     width: 36px;
     height: 36px;
-  }
-
-  .card-hinted::before {
-    font-size: 0.7rem;
-    top: -18px;
   }
 }
 

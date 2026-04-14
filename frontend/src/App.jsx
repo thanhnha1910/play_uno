@@ -11,9 +11,10 @@ const socket = io(SERVER_URL, {
 const AVATARS = ['🐱', '🐶', '🦊', '🐸', '🐼', '🐨', '🦁', '🐯', '🐰', '🐻', '🐷', '🦄'];
 
 // ============================================================
-// MEMOIZED: UnoCard — chỉ re-render khi props thay đổi
+// MEMOIZED: UnoCard — chỉ re-render khi props thực sự đổi
+// Không nhận onClick — dùng event delegation từ parent
 // ============================================================
-const UnoCard = memo(({ color, value, type, onClick, isDrawDeck, drawStack, isHinted, small }) => {
+const UnoCard = memo(({ color, value, type, onClick, isDrawDeck, drawStack, isHinted, small, index }) => {
   const colorClass = color.replace(' xanh', '').replace(' lá', '-lá').replace(' dương', '-dương');
   
   let displayValue = value;
@@ -27,7 +28,7 @@ const UnoCard = memo(({ color, value, type, onClick, isDrawDeck, drawStack, isHi
 
   if (isDrawDeck) {
     return (
-      <div className={`uno-card-wrapper Đen${small ? ' card-small' : ''}`} onClick={onClick} style={{ cursor: 'pointer' }}>
+      <div className="uno-card-wrapper Đen" onClick={onClick}>
         <div className="uno-card-inner draw-deck-inner">
           <div className="uno-card-oval draw-deck-oval"></div>
           <div className="draw-deck-label">
@@ -39,20 +40,16 @@ const UnoCard = memo(({ color, value, type, onClick, isDrawDeck, drawStack, isHi
     );
   }
 
-  const cls = `uno-card-wrapper ${colorClass}${isHinted ? ' card-hinted' : ''}${small ? ' card-small' : ''}`;
+  const cls = `uno-card-wrapper ${colorClass}${isHinted ? ' card-hinted' : ''}`;
 
   return (
-    <div className={cls} onClick={onClick}>
+    <div className={cls} data-index={index}>
       <div className="uno-card-inner">
         <div className="uno-card-corner uno-card-top-left">{cornerValue}</div>
         <div className="uno-card-oval"></div>
-        <div className="uno-card-center-value">
-          {displayValue}
-        </div>
+        <div className="uno-card-center-value">{displayValue}</div>
         <div className="uno-card-corner uno-card-bottom-right">{cornerValue}</div>
-        {type === 'wild' && color !== 'Đen' && (
-           <div className="wild-color-label">{color}</div>
-        )}
+        {type === 'wild' && color !== 'Đen' && <div className="wild-color-label">{color}</div>}
       </div>
     </div>
   );
@@ -123,11 +120,6 @@ function App() {
     const onUno = () => {
       setShowUnoEffect(true);
       setTimeout(() => setShowUnoEffect(false), 2000);
-      try {
-        const msg = new SpeechSynthesisUtterance('UNO!');
-        msg.rate = 1.3; msg.pitch = 1.5;
-        window.speechSynthesis.speak(msg);
-      } catch (e) {}
     };
 
     socket.on('game_state', onState);
@@ -158,8 +150,13 @@ function App() {
     }
   }, [roomInput, nickname, selectedAvatar]);
 
-  const handlePlayCard = useCallback((index) => {
+  // Event delegation: 1 handler trên container thay vì N handler trên N card
+  const handleHandClick = useCallback((e) => {
     if (!gameState.is_my_turn) return;
+    const cardEl = e.target.closest('[data-index]');
+    if (!cardEl) return;
+    const index = parseInt(cardEl.dataset.index, 10);
+    if (isNaN(index) || !gameState.hand?.[index]) return;
     const card = gameState.hand[index];
     if (card.type === 'wild' && card.value !== '+4') {
       setPendingCardIndex(index);
@@ -184,7 +181,9 @@ function App() {
   const handleCatchUno = useCallback(() => socket.emit('catch_uno', {}), []);
   const handlePassTurn = useCallback(() => socket.emit('pass_turn', {}), []);
 
-  // Last message memo
+  // Pre-compute hinted set (O(1) lookup instead of includes)
+  const hintedSet = useMemo(() => new Set(gameState.playable_indices || []), [gameState.playable_indices]);
+
   const lastMessage = useMemo(() => {
     const msgs = gameState.messages;
     return msgs?.length > 0 ? msgs[msgs.length - 1] : null;
@@ -322,15 +321,15 @@ function App() {
             )}
           </div>
 
-          <div className="cards-hand">
+          <div className="cards-hand" onClick={handleHandClick}>
             {gameState.hand?.map((card, index) => (
               <UnoCard
                 key={`${card.color}-${card.value}-${index}`}
                 color={card.color}
                 value={card.value}
                 type={card.type}
-                onClick={() => handlePlayCard(index)}
-                isHinted={gameState.is_my_turn && gameState.playable_indices?.includes(index)}
+                index={index}
+                isHinted={gameState.is_my_turn && hintedSet.has(index)}
               />
             ))}
           </div>
