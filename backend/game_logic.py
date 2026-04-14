@@ -190,6 +190,15 @@ class UnoGame:
         self.switch_turn(skip=skip_next)
         return True, "Đánh bài thành công."
 
+    def deal_card_smart(self):
+        """50% rút được lá chơi được, 50% ngẫu nhiên — cân bằng game"""
+        if random.random() < 0.5 and self.last_played_card:
+            playable_indices = [i for i, c in enumerate(self.deck) if self.can_play(c)]
+            if playable_indices:
+                idx = random.choice(playable_indices)
+                return self.deck.pop(idx)
+        return self.deal_card()
+
     def draw_cards(self, player_id, is_timeout=False):
         if self.status != "playing" or player_id != self.get_current_player():
             return False, "Không phải lượt của bạn!"
@@ -197,23 +206,20 @@ class UnoGame:
         if self.has_drawn_this_turn and not is_timeout:
             return False, "Bạn nhận được 1 lượt mồi. Hãy đánh hoặc Bỏ lượt!"
 
-        amount_to_draw = self.draw_stack if self.draw_stack > 0 else 1
-        
         if self.draw_stack > 0:
-            # Code này thực ra sẽ hiếm khi chạy vì switch_turn đã auto-penalty
-            # Nhưng vẫn giữ làm fallback
             drawn_cards = []
-            for _ in range(amount_to_draw):
-                drawn_cards.append(self.deal_card())
+            for _ in range(self.draw_stack):
+                drawn_cards.append(self.deal_card())  # Phạt = random thuần
             self.hands[player_id].extend(drawn_cards)
-            self.log(f"Người chơi bị phạt cộng dồn {amount_to_draw} lá.")
+            self.log(f"Bị phạt cộng dồn {self.draw_stack} lá.")
             self.draw_stack = 0
             self.switch_turn(skip=False) 
             self.uno_status[player_id] = False
             return True, drawn_cards
             
         else:
-            drawn_card = self.deal_card()
+            # Rút thông minh — 50/50
+            drawn_card = self.deal_card_smart()
             self.hands[player_id].append(drawn_card)
             
             if is_timeout:
@@ -221,9 +227,9 @@ class UnoGame:
                 self.switch_turn(skip=False)
             else:
                 if self.can_play(drawn_card):
-                    self.log("Rút trúng bài hợp lệ. Cấp thêm 15s để suy nghĩ!")
+                    self.log("Rút trúng bài hợp lệ! Thêm 15s suy nghĩ.")
                     self.has_drawn_this_turn = True
-                    self.turn_deadline = time.time() + 15 # RESET TIMER
+                    self.turn_deadline = time.time() + 15
                 else:
                     self.log("Rút 1 lá không khớp. Chuyển lượt!")
                     self.switch_turn(skip=False)
