@@ -33,6 +33,7 @@ class UnoGame:
         self.play_direction = 1   # 1 = clockwise, -1 = counter-clockwise
         self.status = "waiting"
         self.winner = None
+        self.final_rankings = []  # [{player_id, nickname, avatar, card_count, rank}]
         self.draw_stack = 0
         self.last_played_card = None
         self.uno_status = {}
@@ -98,6 +99,7 @@ class UnoGame:
             self.status = "playing"
             self.draw_stack = 0
             self.winner = None
+            self.final_rankings = []
             self.messages = []
             self.turn_deadline = time.time() + 15
             self.has_drawn_this_turn = False
@@ -210,6 +212,7 @@ class UnoGame:
         if len(hand) == 0:
             self.status = "finished"
             self.winner = player_id
+            self._compute_rankings(player_id)
             self.log(f"{name} đã thắng!")
             return True, "Thắng!"
 
@@ -289,6 +292,25 @@ class UnoGame:
         
         return False, "Không có ai quên hô UNO."
 
+    def _compute_rankings(self, winner_id):
+        """Compute final rankings when game ends.
+        Winner = 0 cards (rank 1). Loser = most cards (last rank)."""
+        results = []
+        for pid in self.players:
+            info = self.player_info.get(pid, {})
+            card_count = len(self.hands.get(pid, []))
+            results.append({
+                'player_id': pid,
+                'nickname': info.get('nickname', 'Player'),
+                'avatar': info.get('avatar', '🐱'),
+                'card_count': card_count,
+            })
+        # Sort by card count ascending: winner first, loser last
+        results.sort(key=lambda x: x['card_count'])
+        for i, r in enumerate(results):
+            r['rank'] = i + 1
+        self.final_rankings = results
+
     def get_state_for_player(self, player_id):
         """Trả state cá nhân cho mỗi player"""
         time_left = max(0, int(self.turn_deadline - time.time())) if self.status == 'playing' else 0
@@ -302,11 +324,15 @@ class UnoGame:
                 if self.can_play(card):
                     playable_indices.append(i)
         
-        # Winner
+        # Winner / Loser
         if self.winner:
             winner_val = True if self.winner == player_id else False
+            # Am I the loser? (most cards = last in rankings)
+            loser_id = self.final_rankings[-1]['player_id'] if self.final_rankings else None
+            loser_val = True if loser_id == player_id else False
         else:
             winner_val = None
+            loser_val = False
 
         # Build opponents list (theo thứ tự kim đồng hồ từ player)
         opponents = []
@@ -341,6 +367,8 @@ class UnoGame:
             'draw_stack': self.draw_stack,
             'messages': self.messages[-3:],
             'winner': winner_val,
+            'loser': loser_val,
+            'final_rankings': self.final_rankings if self.status == 'finished' else [],
             'time_left': time_left,
             'uno_called': self.uno_status.get(player_id, False),
             'playable_indices': playable_indices,

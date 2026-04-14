@@ -252,6 +252,155 @@ h1, h2, h3 {
 }
 
 /* ====================================================
+   RESULTS / RANKINGS
+   ==================================================== */
+.results-panel {
+  max-width: 420px;
+}
+
+.results-hero {
+  text-align: center;
+  margin-bottom: 16px;
+}
+
+.results-emoji {
+  font-size: 4rem;
+  margin-bottom: 8px;
+  animation: pop-in 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.results-title {
+  font-size: 2rem;
+  color: #facc15;
+  text-shadow: 0 0 20px rgba(250, 204, 21, 0.3);
+}
+
+.results-sub {
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.5);
+  margin-top: 4px;
+}
+
+.rankings-board {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.rankings-heading {
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  color: rgba(255, 255, 255, 0.4);
+  text-align: center;
+  margin-bottom: 4px;
+}
+
+.ranking-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 12px;
+  transition: all 0.3s ease;
+}
+
+.rank-winner {
+  background: rgba(250, 204, 21, 0.1);
+  border-color: rgba(250, 204, 21, 0.3);
+  box-shadow: 0 0 16px rgba(250, 204, 21, 0.1);
+}
+
+.rank-loser {
+  background: rgba(239, 68, 68, 0.08);
+  border-color: rgba(239, 68, 68, 0.2);
+  box-shadow: 0 0 12px rgba(239, 68, 68, 0.08);
+}
+
+.rank-pos {
+  font-size: 1.2rem;
+  width: 32px;
+  text-align: center;
+  flex-shrink: 0;
+  font-weight: 800;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.rank-winner .rank-pos {
+  color: #facc15;
+}
+
+.rank-loser .rank-pos {
+  color: #ef4444;
+}
+
+.rank-avatar {
+  font-size: 1.4rem;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.rank-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.rank-name {
+  font-weight: 700;
+  font-size: 0.85rem;
+  color: #f1f5f9;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.rank-cards {
+  font-size: 0.65rem;
+  color: rgba(255, 255, 255, 0.4);
+  font-weight: 600;
+}
+
+.rank-winner .rank-cards {
+  color: rgba(250, 204, 21, 0.7);
+}
+
+.rank-loser .rank-cards {
+  color: rgba(239, 68, 68, 0.7);
+}
+
+.rank-badge {
+  font-size: 0.6rem;
+  font-weight: 800;
+  letter-spacing: 1px;
+  padding: 3px 8px;
+  border-radius: 8px;
+  text-transform: uppercase;
+  flex-shrink: 0;
+}
+
+.rank-winner .rank-badge {
+  background: rgba(250, 204, 21, 0.2);
+  color: #facc15;
+  border: 1px solid rgba(250, 204, 21, 0.3);
+}
+
+.rank-loser .rank-badge {
+  background: rgba(239, 68, 68, 0.15);
+  color: #ef4444;
+  border: 1px solid rgba(239, 68, 68, 0.25);
+}
+
+/* ====================================================
    AVATAR PICKER
    ==================================================== */
 .avatar-picker {

@@ -279,12 +279,43 @@ function App() {
   // ============ FINISHED ============
   if (gameState.status === 'finished') {
     const didWin = gameState.winner === true;
+    const didLose = gameState.loser === true;
+    const rankings = gameState.final_rankings || [];
+
     return (
       <div className="app-container">
-        <div className="glass-panel lobby">
-          <div className="avatar-selected" style={{fontSize: '4rem'}}>{didWin ? '🎉' : '💔'}</div>
-          <h1 style={{marginTop: '10px'}}>{didWin ? "BẠN THẮNG!" : "THUA RỒI!"}</h1>
-          <p style={{opacity: 0.7, marginTop: '5px'}}>{didWin ? 'Xuất sắc lắm!' : 'Lần sau sẽ may mắn hơn!'}</p>
+        <div className="glass-panel lobby results-panel">
+          <div className="results-hero">
+            <div className="results-emoji">{didWin ? '🏆' : didLose ? '💀' : '🃏'}</div>
+            <h1 className="results-title">
+              {didWin ? 'BẠN THẮNG!' : didLose ? 'BẠN THUA!' : 'KẾT THÚC!'}
+            </h1>
+            <p className="results-sub">
+              {didWin ? 'Xuất sắc lắm!' : didLose ? 'Người còn nhiều lá nhất...' : 'Lần sau sẽ may mắn hơn!'}
+            </p>
+          </div>
+
+          {rankings.length > 0 && (
+            <div className="rankings-board">
+              <h3 className="rankings-heading">Bảng Xếp Hạng</h3>
+              {rankings.map((r, i) => (
+                <div key={i} className={`ranking-row${r.rank === 1 ? ' rank-winner' : ''}${r.rank === rankings.length && rankings.length > 2 ? ' rank-loser' : ''}`}>
+                  <div className="rank-pos">
+                    {r.rank === 1 ? '🏆' : r.rank === rankings.length && rankings.length > 2 ? '💀' : `#${r.rank}`}
+                  </div>
+                  <div className="rank-avatar">{r.avatar}</div>
+                  <div className="rank-info">
+                    <div className="rank-name">{r.nickname}</div>
+                    <div className="rank-cards">{r.card_count} lá còn lại</div>
+                  </div>
+                  <div className="rank-badge">
+                    {r.rank === 1 ? 'THẮNG' : r.rank === rankings.length && rankings.length > 2 ? 'THUA' : ''}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
           <button className="btn btn-primary" style={{marginTop: '20px'}} onClick={() => window.location.reload()}>Chơi Lại</button>
         </div>
       </div>
